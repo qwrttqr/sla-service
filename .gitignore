@@ -2,3 +2,10 @@
 .idea
 
 /data
+/local_cache
+
+# Python build and distribution artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
