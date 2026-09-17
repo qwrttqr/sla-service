@@ -3,7 +3,7 @@ from enum import Enum
 from pydantic import BaseModel
 from datetime import time
 
-from core.domain.request import Request
+from src.core.domain.request import Request
 
 
 class EventType(str, Enum):

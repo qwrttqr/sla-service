@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import time
 from typing import Tuple
 
-from core.domain.engineer import Skill, VehicleType, Equipment
+from src.core.domain.engineer import Skill, VehicleType, Equipment
 
 
 class Request(BaseModel):

@@ -22,9 +22,9 @@ class Equipment(str, Enum):
 
 class Engineer(BaseModel):
     id: int
+    current_point_coords: Tuple[float, float]
     shift_start: time
     shift_end: time
     skills: set[Skill] = Field(..., min_length=1, max_length=3)
     vehicle_type: VehicleType
     equipment: set[Equipment]
-    current_point_coords = Tuple[float, float]
