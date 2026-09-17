@@ -6,13 +6,16 @@ from fastapi import UploadFile
 
 class CsvParser:
     @staticmethod
-    async def parse_from_network(files: list[UploadFile]) -> pd.DataFrame:
+    async def parse_from_network(
+        files: list[UploadFile],
+        encoding: str
+    ) -> pd.DataFrame:
         df_list = []
 
         for file in files:
             contents = await file.read()
 
-            parsed_df = pd.read_csv(io.BytesIO(contents), sep=';', encoding='windows-1251')
+            parsed_df = pd.read_csv(io.BytesIO(contents), sep=';', encoding=encoding)
 
             df_list.append(parsed_df)
 
@@ -24,11 +27,14 @@ class CsvParser:
         return pd.DataFrame()
 
     @staticmethod
-    async def parse_from_disk(file_paths: list[str]) -> pd.DataFrame:
+    async def parse_from_disk(
+        file_paths: list[str],
+        encoding: str
+    ) -> pd.DataFrame:
         df_list = []
 
         for file_path in file_paths:
-            parsed_df = pd.read_csv(file_path, sep=';', encoding='windows-1251')
+            parsed_df = pd.read_csv(file_path, sep=';', encoding=encoding)
 
             df_list.append(parsed_df)
 
