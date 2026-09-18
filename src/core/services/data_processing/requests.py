@@ -1,15 +1,17 @@
+import ast
 import asyncio
 import io
+from datetime import datetime
+
 import pandas as pd
 
-from datetime import datetime
-from core.domain.engineer import Equipment
 from core.domain.geocoder_interface import GeocoderInterface
 from core.services.local_cache import get_from_cache, save_to_cache
-from src.core.domain.engineer import Engineer, VehicleType, Skill
+from src.core.domain.engineer import Skill, VehicleType, Equipment
+from src.core.domain.request import Request
 
 
-class EngineerBuilder:
+class RequestBuilder:
     SKILL_MAP: dict[str, Skill] = {
         "skill_local_works": Skill.LOCAL,
         "skill_connection_works": Skill.CONNECTION,
@@ -35,36 +37,42 @@ class EngineerBuilder:
         self.geocoder_service = geocoder_service
 
     @staticmethod
-    def __build_equipment_set_from_str(equipment_info: str) -> set[Equipment]:
-        equipment = set(equipment_info)
-        mapped_equipment = set()
-        for item in equipment:
-            try:
-                mapped_equipment.add(EngineerBuilder.EQUIPMENT_MAP[item.strip()])
-            except KeyError:
-                raise ValueError(f"Unknown vehicle type: {item!r}")
-        return mapped_equipment
+    def __parse_set(raw) -> set[str]:
+        """CSV cell like "{'FMC', 'FTTB'}" -> {'FMC', 'FTTB'}; empty/NaN -> set()."""
+        if not isinstance(raw, str) or not raw.strip():
+            return set()
+        return {str(item).strip() for item in ast.literal_eval(raw)}
 
     @staticmethod
-    def __build_skill_set_from_str(skills_info: str) -> set[Skill]:
-        equipment = set(skills_info)
-        mapped_skills = set()
-        for item in equipment:
+    def __build_equipment_set_from_str(equipment_info) -> set[Equipment] | None:
+        mapped_equipment = set()
+        for item in RequestBuilder.__parse_set(equipment_info):
             try:
-                mapped_skills.add(EngineerBuilder.SKILL_MAP[item.strip()])
+                mapped_equipment.add(RequestBuilder.EQUIPMENT_MAP[item])
+            except KeyError:
+                raise ValueError(f"Unknown equipment: {item!r}")
+        return mapped_equipment or None
+
+    @staticmethod
+    def __build_skill_set_from_str(skills_info) -> set[Skill]:
+        mapped_skills = set()
+        for item in RequestBuilder.__parse_set(skills_info):
+            try:
+                mapped_skills.add(RequestBuilder.SKILL_MAP[item])
             except KeyError:
                 raise ValueError(f"Unknown skill: {item!r}")
         return mapped_skills
 
     @staticmethod
-    def __build_vehicle_type_from_str(raw: str) -> VehicleType:
+    def __build_vehicle_type_from_str(raw) -> VehicleType | None:
+        if not isinstance(raw, str) or not raw.strip():
+            return None  # walk = no requirement
         try:
-            return EngineerBuilder.VEHICLE_TYPE_MAP[raw.strip()]
+            return RequestBuilder.VEHICLE_TYPE_MAP[raw.strip()]
         except KeyError:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
-    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Engineer]:
-
+    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Request]:
         df = pd.read_csv(source, encoding=encoding)
 
         coords_by_address: dict[str, tuple[float, float]] = {}
@@ -73,6 +81,7 @@ class EngineerBuilder:
             address = str(row.address)
             if address in coords_by_address or address in active_network_tasks:
                 continue
+
             cached_coords = get_from_cache(address)
             if cached_coords is not None:
                 coords_by_address[address] = cached_coords
@@ -87,19 +96,20 @@ class EngineerBuilder:
             save_to_cache(address, coords)
             coords_by_address[address] = coords
 
-        engineers = []
-
-        for i, row in enumerate(df.itertuples()):
-            engineers.append(
-                Engineer(
-                    id=i,
-                    starting_point_coords=coords_by_address[str(row.address)],
-                    shift_start=datetime.strptime(row.shift_start, self.DATETIME_FMT),
-                    shift_end=datetime.strptime(row.shift_end, self.DATETIME_FMT),
-                    skills=EngineerBuilder.__build_skill_set_from_str(row.skills),
-                    equipment=EngineerBuilder.__build_equipment_set_from_str(row.equipment),
-                    vehicle_type=EngineerBuilder.__build_vehicle_type_from_str(row.vehicle_type),
+        requests = []
+        for row in df.itertuples():
+            requests.append(
+                Request(
+                    id=int(row.request_id),
+                    point_coords=coords_by_address[str(row.address)],
+                    duration_minutes=int(row.duration),
+                    priority=int(row.priority),
+                    request_start=datetime.strptime(row.window_start, self.DATETIME_FMT),
+                    request_end=datetime.strptime(row.window_end, self.DATETIME_FMT),
+                    required_skills=RequestBuilder.__build_skill_set_from_str(row.required_skills),
+                    required_vehicle_type=RequestBuilder.__build_vehicle_type_from_str(row.required_vehicle),
+                    required_equipment=RequestBuilder.__build_equipment_set_from_str(row.required_equipment),
                 )
             )
 
-        return engineers
+        return requests

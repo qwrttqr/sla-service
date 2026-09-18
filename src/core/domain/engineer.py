@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from datetime import time
-from typing import Tuple
+from datetime import datetime
+
 
 class VehicleType(str, Enum):
     CAR = "car"
@@ -22,9 +22,9 @@ class Equipment(str, Enum):
 
 class Engineer(BaseModel):
     id: int
-    starting_point_coords: Tuple[float, float]
-    shift_start: time
-    shift_end: time
+    starting_point_coords: tuple[float, float]
+    shift_start: datetime
+    shift_end: datetime
     skills: set[Skill] = Field(..., min_length=1, max_length=3)
     vehicle_type: VehicleType
     equipment: set[Equipment]
