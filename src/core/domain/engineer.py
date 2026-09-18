@@ -15,14 +15,14 @@ class Skill(str, Enum):
     EMERGENCY = "emergency_works"
 
 class Equipment(str, Enum):
-    FMC = "fmc"
-    FTTB = "fttb"
+    FMC = "FMC"
+    FTTB = "FTTB"
     gigabit_connection = "gigabit_connection"
 
 
 class Engineer(BaseModel):
     id: int
-    current_point_coords: Tuple[float, float]
+    starting_point_coords: Tuple[float, float]
     shift_start: time
     shift_end: time
     skills: set[Skill] = Field(..., min_length=1, max_length=3)
