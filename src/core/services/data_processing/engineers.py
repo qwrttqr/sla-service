@@ -4,7 +4,7 @@ import pandas as pd
 
 from datetime import datetime
 from core.domain.engineer import Equipment
-from core.domain.geocoder_interface import GeocoderInterface
+from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
 from src.core.domain.engineer import Engineer, VehicleType, Skill
 
@@ -31,8 +31,8 @@ class EngineerBuilder:
 
     DATETIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
-    def __init__(self, geocoder_service: GeocoderInterface):
-        self.geocoder_service = geocoder_service
+    def __init__(self, geocoder: GeocoderService):
+        self.geocoder_service = geocoder
 
     @staticmethod
     def __build_equipment_set_from_str(equipment_info: str) -> set[Equipment]:

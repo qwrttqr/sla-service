@@ -7,6 +7,7 @@ import pandas as pd
 
 from core.domain.geocoder_interface import GeocoderInterface
 from core.domain.request import WorkType, Status
+from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
 from src.core.domain.engineer import Skill, VehicleType, Equipment
 from src.core.domain.request import Request
@@ -48,8 +49,8 @@ class RequestBuilder:
 
     DATETIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
-    def __init__(self, geocoder_service: GeocoderInterface):
-        self.geocoder_service = geocoder_service
+    def __init__(self, geocoder: GeocoderService):
+        self.geocoder_service = geocoder
 
     @staticmethod
     def __parse_set(raw) -> set[str]:

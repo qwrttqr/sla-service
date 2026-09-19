@@ -2,10 +2,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Tuple
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, Field
 
 from src.core.domain.engineer import Skill, VehicleType, Equipment
-
 
 class WorkType(str, Enum):
     CONNECT_CLIENT = "connect_client"
@@ -50,7 +49,8 @@ class Request(BaseModel):
     request_start: datetime
     request_end: datetime
     required_vehicle_type: VehicleType | None = None
-    required_equipment: Equipment | None = None
+    required_equipment: set[Equipment] | None = None
+    required_skills: set[Skill] = Field(..., min_length=1, max_length=3)
     status: Status
 
     @computed_field

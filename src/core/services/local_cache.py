@@ -2,7 +2,7 @@ import json
 from importlib.resources import files
 from typing import Any
 
-package_root = str(files("my_project"))
+package_root = str(files("sla_service"))
 cache_path = f"{package_root}/local_cache/cache.json"
 
 
