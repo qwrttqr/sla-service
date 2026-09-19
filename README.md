@@ -1,7 +1,13 @@
 # How to start
 
-To create test data:
+## Зависимости и виртаульное окружение
 
-- Create `data` folder inside project folder
-- Unpack data there, do not rename anything
-- Run all cells inside `transform_data.ipynb`
+1. Создайте виртуальное окружение для проекта любым удобным способом (используйте Python 3.12).
+2. Установите зависимости `pip install -r requirements.txt`
+
+## Данные
+
+Чтобы создать тестовые данные из данных в хакатоне:
+
+1. Создайте папку `data` и распакуйте в неё все данные
+2. Запустите `transform_data.ipynb`

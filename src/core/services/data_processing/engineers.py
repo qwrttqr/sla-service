@@ -11,9 +11,9 @@ from src.core.domain.engineer import Engineer, VehicleType, Skill
 
 class EngineerBuilder:
     SKILL_MAP: dict[str, Skill] = {
-        "skill_local_works": Skill.LOCAL,
-        "skill_connection_works": Skill.CONNECTION,
-        "skill_emergency_works": Skill.EMERGENCY,
+        "skill_local_works": Skill.LOCAL_WORKS,
+        "skill_connection_works": Skill.CONNECTION_WORKS,
+        "skill_emergency_works": Skill.EMERGENCY_WORKS,
     }
 
     EQUIPMENT_MAP: dict[str, Equipment] = {

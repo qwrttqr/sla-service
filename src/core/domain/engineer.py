@@ -10,9 +10,9 @@ class VehicleType(str, Enum):
     PUBLIC_TRANSPORT = "public_transport"
 
 class Skill(str, Enum):
-    LOCAL = "local_works"
-    CONNECTION = "connection_works"
-    EMERGENCY = "emergency_works"
+    LOCAL_WORKS = "local_works"
+    CONNECTION_WORKS = "connection_works"
+    EMERGENCY_WORKS = "emergency_works"
 
 class Equipment(str, Enum):
     FMC = "FMC"

@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 
 from core.domain.geocoder_interface import GeocoderInterface
+from core.domain.request import WorkType, Status
 from core.services.local_cache import get_from_cache, save_to_cache
 from src.core.domain.engineer import Skill, VehicleType, Equipment
 from src.core.domain.request import Request
@@ -13,9 +14,9 @@ from src.core.domain.request import Request
 
 class RequestBuilder:
     SKILL_MAP: dict[str, Skill] = {
-        "skill_local_works": Skill.LOCAL,
-        "skill_connection_works": Skill.CONNECTION,
-        "skill_emergency_works": Skill.EMERGENCY,
+        "skill_local_works": Skill.LOCAL_WORKS,
+        "skill_connection_works": Skill.CONNECTION_WORKS,
+        "skill_emergency_works": Skill.EMERGENCY_WORKS,
     }
 
     EQUIPMENT_MAP: dict[str, Equipment] = {
@@ -29,6 +30,20 @@ class RequestBuilder:
         "walk": VehicleType.WALK,
         "bicycle": VehicleType.BICYCLE,
         "public_transport": VehicleType.PUBLIC_TRANSPORT,
+    }
+
+    WORK_TYPE_MAP: dict[str, WorkType] = {
+        "connect_client": WorkType.CONNECT_CLIENT,
+        "emergency_work": WorkType.EMERGENCY_WORK,
+        "local_work_or_repair": WorkType.LOCAL_WORK_OR_REPAIR,
+        "postorder": WorkType.POST_ORDER,
+    }
+
+    STATUS_MAP: dict[str, Status] = {
+        "sent": Status.SENT,
+        "cancelled": Status.CANCELLED,
+        "on_the_way": Status.ON_THE_WAY,
+        "done": Status.DONE,
     }
 
     DATETIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -72,13 +87,27 @@ class RequestBuilder:
         except KeyError:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
+    @staticmethod
+    def __build_work_type_from_str(raw) -> WorkType:
+        try:
+            return RequestBuilder.WORK_TYPE_MAP[raw.strip()]
+        except KeyError:
+            raise ValueError(f"Unknown work type type: {raw!r}")
+
+    @staticmethod
+    def __build_status_from_str(raw) -> Status:
+        try:
+            return RequestBuilder.STATUS_MAP[raw.strip()]
+        except KeyError:
+            raise ValueError(f"Unknown work type type: {raw!r}")
+
     async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Request]:
         df = pd.read_csv(source, encoding=encoding)
 
         coords_by_address: dict[str, tuple[float, float]] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
         for row in df.itertuples():
-            address = str(row.address)
+            address = str(row.address).lower()
             if address in coords_by_address or address in active_network_tasks:
                 continue
 
@@ -102,8 +131,8 @@ class RequestBuilder:
                 Request(
                     id=int(row.request_id),
                     point_coords=coords_by_address[str(row.address)],
-                    duration_minutes=int(row.duration),
-                    priority=int(row.priority),
+                    status=self.__build_status_from_str(row.status),
+                    work_type=self.__build_work_type_from_str(row.work_type),
                     request_start=datetime.strptime(row.window_start, self.DATETIME_FMT),
                     request_end=datetime.strptime(row.window_end, self.DATETIME_FMT),
                     required_skills=RequestBuilder.__build_skill_set_from_str(row.required_skills),
