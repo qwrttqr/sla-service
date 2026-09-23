@@ -1,24 +1,31 @@
 import json
-from importlib.resources import files
+import os
+from pathlib import Path
 from typing import Any
 
-package_root = str(files("sla_service"))
-cache_path = f"{package_root}/local_cache/cache.json"
+_DEFAULT_DIR = Path(__file__).resolve().parents[3] / "local_cache"
+cache_path = Path(os.getenv("CACHE_DIR", _DEFAULT_DIR)) / "cache.json"
+
+
+def _load() -> dict:
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save(data: dict) -> None:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def save_to_cache(key: str, value) -> bool:
     try:
-        try:
-            with open(cache_path, "r", encoding="utf-8") as f:
-                cache_data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            cache_data = {}
-
-        cache_data[key] = value
-
-        with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump(cache_data, indent=2, ensure_ascii=False)
-
+        data = _load()
+        data[key] = value
+        _save(data)
         return True
     except Exception as e:
         print(f"Failed to write cache: {e}")
@@ -26,31 +33,12 @@ def save_to_cache(key: str, value) -> bool:
 
 
 def get_from_cache(key: str) -> Any | None:
-    try:
-        with open(cache_path, "r", encoding="utf-8") as f:
-            cache_data = json.load(f)
-
-            return cache_data.get(key)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
+    return _load().get(key)
 
 
 def get_from_cache_save_on_not_exist(key: str, value) -> Any:
-    try:
-        try:
-            with open(cache_path, "r", encoding="utf-8") as f:
-                cache_data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            cache_data = {}
-
-        if key in cache_data.keys():
-            return cache_data[key]
-        else:
-            cache_data[key] = value
-            with open(cache_path, "w", encoding="utf-8") as f:
-                json.dump(cache_data, indent=2, ensure_ascii=False)
-
-
-    except Exception as e:
-        print(f"Failed to write cache: {e}")
-        return False
+    data = _load()
+    if key in data:
+        return data[key]
+    save_to_cache(key, value)
+    return value

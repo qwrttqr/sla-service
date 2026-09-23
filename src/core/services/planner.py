@@ -1,14 +1,98 @@
-from core.services.geocoder import GeocoderService
-from src.core.domain.assignment import Plan
+import asyncio
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+
+from src.core.domain.assignment import Assignment, Plan, UnassignedRequest
 from src.core.domain.engineer import Engineer
 from src.core.domain.request import Request
+from src.core.services.osrm_travel_time import OsrmTravelTime
+
+Coords = tuple[float, float]
+
+
+@dataclass
+class EngineerState:
+    engineer: Engineer
+    position: Coords          # Начинаем с офиса
+    free_at: datetime         # сначала освободимся в начало своей смены
+    route: list[int] = field(default_factory=list)
+
+
+@dataclass
+class Candidate:
+    state: EngineerState
+    travel_min: float
+    arrival: datetime
+    finish: datetime
+
+
+def is_eligible(e: Engineer, r: Request) -> bool:
+    if r.required_vehicle_type is not None and e.vehicle_type != r.required_vehicle_type:
+        return False
+    if not r.required_skills <= e.skills:
+        return False
+    if r.required_equipment and not r.required_equipment <= e.equipment:
+        return False
+    return True
 
 
 class Planner:
-    def __init__(self, geocoder: GeocoderService):
-        self.geocoder = geocoder
+    def __init__(self, travel: OsrmTravelTime):
+        self.travel = travel
+    """
+    Выбираем инженера на заявку, более ранние заявки идут первыми, после по приритету
+    """
+    async def build(self, engineers: list[Engineer], requests: list[Request]) -> Plan:
+        states = [EngineerState(e, e.starting_point_coords, e.shift_start) for e in engineers]
+        assignments: list[Assignment] = []
+        unassigned: list[UnassignedRequest] = []
 
-    @staticmethod
-    def build(engineers: list[Engineer], requests: list[Request]) -> Plan:
-        print(engineers)
-        print(requests)
+        for req in sorted(requests, key=lambda r: (r.request_start, r.priority)):
+            eligible = [s for s in states if is_eligible(s.engineer, req)]
+            if not eligible:
+                unassigned.append(UnassignedRequest(
+                    request_id=req.id, reason="no engineer with matching vehicle/skills/equipment"))
+                continue
+
+            candidates = await self._evaluate(eligible, req)
+            if not candidates:
+                unassigned.append(UnassignedRequest(
+                    request_id=req.id, reason="no engineer can finish within the window/shift"))
+                continue
+            # Побеждает тот, кто первым эту заявку закончит
+            best = min(candidates, key=lambda c: (c.travel_min, c.finish))
+            best_state = best.state
+            best_state.route.append(req.id)
+            best_state.position = req.point_coords
+            best_state.free_at = best.finish
+            assignments.append(Assignment(
+                request_id=req.id,
+                engineer_id=best_state.engineer.id,
+                order=len(best_state.route),
+                planned_arrival=best.arrival.time(),
+                travel_minutes=round(best.travel_min),
+            ))
+
+        return Plan(assignments=assignments, unassigned=unassigned)
+    """
+    Выбираем самую ближайшую по затрачиваемому времени
+    """
+    async def _evaluate(self, states: list[EngineerState], req: Request) -> list[Candidate]:
+        async def travel_min(s: EngineerState) -> float | None:
+            m = await self.travel.matrix_minutes(
+                [s.position], [req.point_coords], s.engineer.vehicle_type, s.free_at)
+            return m[0][0]
+
+        times = await asyncio.gather(*(travel_min(s) for s in states))
+
+        out = []
+        for s, t in zip(states, times):
+            if t is None:  # unroutable
+                continue
+            arrival = s.free_at + timedelta(minutes=t)
+            start = max(arrival, req.request_start)  # wait if early
+            finish = start + timedelta(minutes=req.duration_minutes)
+            if finish > min(req.request_end, s.engineer.shift_end):
+                continue
+            out.append(Candidate(s, t, arrival, finish))
+        return out

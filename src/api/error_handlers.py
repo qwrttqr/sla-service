@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.core.exceptions.geocoder_failure import GeocoderFailure
+from core.exceptions.geocoder_failure import GeocoderFailure
 
 
 def register_error_handlers(app: FastAPI) -> None:

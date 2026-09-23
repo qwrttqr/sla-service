@@ -4,7 +4,7 @@ from typing import Tuple
 
 from pydantic import BaseModel, computed_field, Field
 
-from src.core.domain.engineer import Skill, VehicleType, Equipment
+from core.domain.engineer import Skill, VehicleType, Equipment
 
 class WorkType(str, Enum):
     CONNECT_CLIENT = "connect_client"
@@ -62,8 +62,3 @@ class Request(BaseModel):
     @property
     def priority(self) -> int:
         return WORK_TYPE_PRIORITY_MAP[self.work_type]
-
-    @computed_field
-    @property
-    def required_skills(self) -> set[Skill]:
-        return {WORK_TYPE_SKILL_MAP[self.work_type]}

@@ -5,8 +5,8 @@ from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
-from src.api.dependencies import PlannerDep, EngineerBuilderDep, RequestBuilderDep
-from src.core.domain.assignment import Assignment
+from api.dependencies import PlannerDep, EngineerBuilderDep, RequestBuilderDep
+from core.domain.assignment import Assignment
 
 router = APIRouter(prefix="/plan", tags=["planning"])
 

@@ -5,12 +5,11 @@ from datetime import datetime
 
 import pandas as pd
 
-from core.domain.geocoder_interface import GeocoderInterface
 from core.domain.request import WorkType, Status
 from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
-from src.core.domain.engineer import Skill, VehicleType, Equipment
-from src.core.domain.request import Request
+from core.domain.engineer import Skill, VehicleType, Equipment
+from core.domain.request import Request
 
 
 class RequestBuilder:
@@ -103,7 +102,7 @@ class RequestBuilder:
             raise ValueError(f"Unknown work type type: {raw!r}")
 
     async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Request]:
-        df = pd.read_csv(source, encoding=encoding)
+        df = pd.read_csv(source, encoding=encoding, header=0)
 
         coords_by_address: dict[str, tuple[float, float]] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
@@ -116,7 +115,7 @@ class RequestBuilder:
             if cached_coords is not None:
                 coords_by_address[address] = cached_coords
             else:
-                active_network_tasks[address] = asyncio.create_task(self.geocoder_service.geocode(address))
+                active_network_tasks[address] = asyncio.create_task(self.geocoder_service.get_coordinates(address))
 
         if active_network_tasks:
             await asyncio.gather(*active_network_tasks.values())

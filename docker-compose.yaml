@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    ports: [ "8888:8888" ]
+    env_file: .env
+    environment:
+      OSRM_CAR_URL: http://osrm-car:5000
+      OSRM_BICYCLE_URL: http://osrm-bicycle:5000
+      OSRM_FOOT_URL: http://osrm-foot:5000
+    depends_on: [ osrm-car, osrm-bicycle, osrm-foot ]
+    volumes:
+      - ./local_cache:/app/local_cache
+
+  osrm-car:
+    image: osrm/osrm-backend
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/map.osrm
+    volumes: [ "./osrm/car:/data" ]
+    ports: [ "5000:5000" ]
+  osrm-bicycle:
+    image: osrm/osrm-backend
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/map.osrm
+    volumes: [ "./osrm/bicycle:/data" ]
+    ports: [ "5001:5000" ]
+  osrm-foot:
+    image: osrm/osrm-backend
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/map.osrm
+    volumes: [ "./osrm/foot:/data" ]
+    ports: [ "5002:5000" ]

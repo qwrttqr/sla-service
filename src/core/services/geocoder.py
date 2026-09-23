@@ -1,7 +1,7 @@
 from argparse import ArgumentError
 from typing import Tuple
 
-from src.core.domain.geocoder_interface import GeocoderInterface
+from core.services.geocoder_interface import GeocoderInterface
 
 
 class GeocoderService:
