@@ -3,7 +3,7 @@
 .env
 /data
 /local_cache
-/osrm
+/osrm*
 # Python build and distribution artifacts
 *.egg-info/
 .eggs/
