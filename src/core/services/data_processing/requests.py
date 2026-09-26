@@ -127,10 +127,11 @@ class RequestBuilder:
 
         requests = []
         for row in df.itertuples():
+            address = str(row.address).lower()
             requests.append(
                 Request(
                     id=int(row.request_id),
-                    point_coords=coords_by_address[str(row.address)],
+                    point_coords=coords_by_address[address],
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
                     request_start=datetime.strptime(row.window_start, self.DATETIME_FMT),

@@ -9,10 +9,12 @@ class VehicleType(str, Enum):
     BICYCLE = "bicycle"
     PUBLIC_TRANSPORT = "public_transport"
 
+
 class Skill(str, Enum):
     LOCAL_WORKS = "local_works"
     CONNECTION_WORKS = "connection_works"
     EMERGENCY_WORKS = "emergency_works"
+
 
 class Equipment(str, Enum):
     FMC = "FMC"
@@ -22,6 +24,7 @@ class Equipment(str, Enum):
 
 class Engineer(BaseModel):
     id: int
+    office_id: int
     starting_point_coords: tuple[float, float]
     shift_start: datetime
     shift_end: datetime

@@ -1,13 +1,36 @@
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from math import radians, sin, cos, sqrt, atan2
 
-from src.core.domain.assignment import Assignment, Plan, UnassignedRequest
-from src.core.domain.engineer import Engineer
-from src.core.domain.request import Request
-from src.core.services.osrm_travel_time import OsrmTravelTime
+import httpx
+
+from core.domain.assignment import Assignment, Plan, UnassignedRequest
+from core.domain.engineer import Engineer, VehicleType
+from core.domain.office import Office
+from core.domain.request import Request
+from core.services.osrm_travel_time import OsrmTravelTime
 
 Coords = tuple[float, float]
+
+VEHICLE_PROFILE: dict[VehicleType, str] = {
+    VehicleType.CAR: "driving",
+    VehicleType.BICYCLE: "bicycle",
+    VehicleType.WALK: "foot",
+}
+
+
+def haversine_km(a: Coords, b: Coords) -> float:
+    lat1, lon1 = a
+    lat2, lon2 = b
+    r = 6371.0
+    dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+    h = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    return 2 * r * atan2(sqrt(h), sqrt(1 - h))
+
+
+def nearest_office(point: Coords, offices: list[Office]) -> Office:
+    return min(offices, key=lambda o: haversine_km(o.coords, point))
 
 
 @dataclass
@@ -37,50 +60,64 @@ def is_eligible(e: Engineer, r: Request) -> bool:
 
 
 class Planner:
-    def __init__(self, travel: OsrmTravelTime):
+    def __init__(self, travel: dict[VehicleType, OsrmTravelTime]):
         self.travel = travel
+
     """
-    Выбираем инженера на заявку, более ранние заявки идут первыми, после по приритету
+    Выбираем инженера на заявку: сначала внутри офиса (район), при неудаче — по всему городу.
+    Более ранние заявки идут первыми, после по приоритету.
     """
-    async def build(self, engineers: list[Engineer], requests: list[Request]) -> Plan:
+    async def build(self, engineers: list[Engineer], offices: list[Office], requests: list[Request]) -> Plan:
         states = [EngineerState(e, e.starting_point_coords, e.shift_start) for e in engineers]
+        states_by_office: dict[int, list[EngineerState]] = {}
+        for s in states:
+            states_by_office.setdefault(s.engineer.office_id, []).append(s)
+
         assignments: list[Assignment] = []
         unassigned: list[UnassignedRequest] = []
 
         for req in sorted(requests, key=lambda r: (r.request_start, r.priority)):
-            eligible = [s for s in states if is_eligible(s.engineer, req)]
-            if not eligible:
-                unassigned.append(UnassignedRequest(
-                    request_id=req.id, reason="no engineer with matching vehicle/skills/equipment"))
-                continue
+            office = nearest_office(req.point_coords, offices)
+            district = [s for s in states_by_office.get(office.id, []) if is_eligible(s.engineer, req)]
 
-            candidates = await self._evaluate(eligible, req)
+            candidates = await self._evaluate(district, req)
+            if not candidates:
+                city = [s for s in states if is_eligible(s.engineer, req)]
+                candidates = await self._evaluate(city, req)
+
             if not candidates:
                 unassigned.append(UnassignedRequest(
-                    request_id=req.id, reason="no engineer can finish within the window/shift"))
+                    request_id=req.id, reason="no engineer with matching vehicle/skills/equipment, or none can finish within the window/shift"))
                 continue
+
             # Побеждает тот, кто первым эту заявку закончит
             best = min(candidates, key=lambda c: (c.travel_min, c.finish))
-            best_state = best.state
-            best_state.route.append(req.id)
-            best_state.position = req.point_coords
-            best_state.free_at = best.finish
+            best.state.route.append(req.id)
+            best.state.position = req.point_coords
+            best.state.free_at = best.finish
             assignments.append(Assignment(
                 request_id=req.id,
-                engineer_id=best_state.engineer.id,
-                order=len(best_state.route),
+                engineer_id=best.state.engineer.id,
+                order=len(best.state.route),
                 planned_arrival=best.arrival.time(),
                 travel_minutes=round(best.travel_min),
             ))
 
         return Plan(assignments=assignments, unassigned=unassigned)
+
     """
     Выбираем самую ближайшую по затрачиваемому времени
     """
     async def _evaluate(self, states: list[EngineerState], req: Request) -> list[Candidate]:
         async def travel_min(s: EngineerState) -> float | None:
-            m = await self.travel.matrix_minutes(
-                [s.position], [req.point_coords], s.engineer.vehicle_type, s.free_at)
+            vehicle = s.engineer.vehicle_type
+            profile = VEHICLE_PROFILE.get(vehicle)
+            if profile is None:
+                return None  # no OSRM profile for this vehicle type yet (e.g. public transport)
+            try:
+                m = await self.travel[vehicle].matrix_minutes([s.position], [req.point_coords], profile)
+            except httpx.HTTPError:
+                return None
             return m[0][0]
 
         times = await asyncio.gather(*(travel_min(s) for s in states))

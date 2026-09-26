@@ -1,8 +1,7 @@
 import io
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, UploadFile
-from fastapi.concurrency import run_in_threadpool
+from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
 
 from api.dependencies import PlannerDep, EngineerBuilderDep, RequestBuilderDep
@@ -24,9 +23,12 @@ async def build_plan_from_csv(
     engineer_builder: EngineerBuilderDep,
     request_builder: RequestBuilderDep,
 ) -> PlanResult:
-    engineers = await engineer_builder.build_from_csv(io.BytesIO(await engineers_file.read()))
+    engineers, offices = await engineer_builder.build_from_csv(io.BytesIO(await engineers_file.read()))
     requests = await request_builder.build_from_csv(io.BytesIO(await requests_file.read()))
 
-    return await run_in_threadpool(
-        planner.build, engineers=engineers, requests=requests
+    plan = await planner.build(engineers=engineers, offices=offices, requests=requests)
+
+    return PlanResult(
+        assignments=plan.assignments,
+        unassigned_request_ids=[u.request_id for u in plan.unassigned],
     )

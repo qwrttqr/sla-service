@@ -5,6 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 from core.domain.engineer import Equipment
+from core.domain.office import Office
 from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
 from core.domain.engineer import Engineer, VehicleType, Skill
@@ -69,13 +70,13 @@ class EngineerBuilder:
         except KeyError:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
-    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Engineer]:
+    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> tuple[list[Engineer], list[Office]]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
         coords_by_address: dict[str, tuple[float, float]] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
         for row in df.itertuples():
-            address = str(row.office)
+            address = str(row.office).lower()
             if address in coords_by_address or address in active_network_tasks:
                 continue
             cached_coords = get_from_cache(address)
@@ -92,13 +93,23 @@ class EngineerBuilder:
             save_to_cache(address, coords)
             coords_by_address[address] = coords
 
+        # One Office per unique address, id assigned in first-seen order.
+        office_by_address: dict[str, Office] = {}
+        offices: list[Office] = []
+        for address in coords_by_address:
+            office = Office(id=len(offices), address=address, coords=coords_by_address[address])
+            office_by_address[address] = office
+            offices.append(office)
+
         engineers = []
 
         for i, row in enumerate(df.itertuples()):
+            address = str(row.office).lower()
             engineers.append(
                 Engineer(
                     id=i,
-                    starting_point_coords=coords_by_address[str(row.office)],
+                    office_id=office_by_address[address].id,
+                    starting_point_coords=coords_by_address[address],
                     shift_start=datetime.strptime(row.shift_start, self.DATETIME_FMT),
                     shift_end=datetime.strptime(row.shift_end, self.DATETIME_FMT),
                     skills=EngineerBuilder.__build_skill_set_from_str(row.skills),
@@ -107,4 +118,4 @@ class EngineerBuilder:
                 )
             )
 
-        return engineers
+        return engineers, offices
