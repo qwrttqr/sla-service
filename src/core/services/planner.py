@@ -5,10 +5,10 @@ from math import radians, sin, cos, sqrt, atan2
 
 import httpx
 
-from core.domain.assignment import Assignment, Plan, UnassignedRequest
-from core.domain.engineer import Engineer, VehicleType
-from core.domain.office import Office
-from core.domain.request import Request
+from core.entities.assignment import Assignment, Plan, UnassignedRequest
+from core.entities.engineer import Engineer, VehicleType
+from core.entities.office import Office
+from core.entities.request import Request
 from core.services.osrm_travel_time import OsrmTravelTime
 
 Coords = tuple[float, float]

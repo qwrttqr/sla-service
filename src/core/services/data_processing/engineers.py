@@ -4,11 +4,11 @@ import io
 import pandas as pd
 
 from datetime import datetime
-from core.domain.engineer import Equipment
-from core.domain.office import Office
+from entities.engineer import Equipment
+from entities.office import Office
 from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
-from core.domain.engineer import Engineer, VehicleType, Skill
+from entities.engineer import Engineer, VehicleType, Skill
 
 
 class EngineerBuilder:

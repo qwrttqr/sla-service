@@ -12,3 +12,5 @@ class Settings(BaseSettings):
     osrm_bicycle_url: str = "http://localhost:5001"
     osrm_foot_url: str = "http://localhost:5002"
     traffic_profile_path: Path = Path("data/traffic_profile.json")
+
+settings = Settings()
