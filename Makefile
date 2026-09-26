@@ -85,8 +85,7 @@ win_download:
 	cmd /C "if not exist osrm_arts\map.osm.pbf curl -L -o osrm_arts\map.osm.pbf $(OSM_URL)"
 
 win_clip: win_download
-	cmd /C "if not exist osrm_arts\moscow-oblast.osm.pbf docker run --rm -v \"$(CURDIR)/osrm_arts:/data\" stefda/osmium-tool osmium extract --bbox=$(MOSCOW_BBOX) -o /data/moscow-oblast.osm.pbf /data/map.osm.pbf"
-
+	cmd /C "if not exist osrm_arts\moscow-oblast.osm.pbf docker run --rm -v /c/projects/sla-service/osrm_arts:/data stefda/osmium-tool osmium extract --bbox=$(MOSCOW_BBOX) -o /data/moscow-oblast.osm.pbf /data/map.osm.pbf"
 win_osrm_car:
 	$(MAKE) win_osrm_profile PROFILE=car
 
@@ -102,8 +101,7 @@ win_osrm_profile:
 	cmd /C "if not exist osrm mkdir osrm"
 	cmd /C "if not exist osrm\\$(PROFILE) mkdir osrm\\$(PROFILE)"
 
-	cmd /C "if exist osrm\\$(PROFILE)\\.built (echo OSRM $(PROFILE) is already built. Skipping.) else (copy /Y osrm_arts\\moscow-oblast.osm.pbf osrm\\$(PROFILE)\\map.osm.pbf && docker run --rm -v \"$(CURDIR)/osrm/$(PROFILE):/data\" osrm/osrm-backend osrm-extract -p /opt/$(PROFILE).lua /data/map.osm.pbf && docker run --rm -v \"$(CURDIR)/osrm/$(PROFILE):/data\" osrm/osrm-backend osrm-partition /data/map.osrm && docker run --rm -v \"$(CURDIR)/osrm/$(PROFILE):/data\" osrm/osrm-backend osrm-customize /data/map.osrm && del osrm\\$(PROFILE)\\map.osm.pbf && type nul > osrm\\$(PROFILE)\\.built)"
-
+	cmd /C "if exist osrm\\$(PROFILE)\\.built (echo OSRM $(PROFILE) is already built. Skipping.) else (copy /Y osrm_arts\\moscow-oblast.osm.pbf osrm\\$(PROFILE)\\map.osm.pbf && docker run --rm -v /c/projects/sla-service/osrm/$(PROFILE):/data osrm/osrm-backend osrm-extract -p /opt/$(PROFILE).lua /data/map.osm.pbf && docker run --rm -v /c/projects/sla-service/osrm/$(PROFILE):/data osrm/osrm-backend osrm-partition /data/map.osrm && docker run --rm -v /c/projects/sla-service/osrm/$(PROFILE):/data osrm/osrm-backend osrm-customize /data/map.osrm && del osrm\\$(PROFILE)\\map.osm.pbf && type nul > osrm\\$(PROFILE)\\.built)"
 win_up:
 	docker compose up -d --build
 
