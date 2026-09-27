@@ -90,11 +90,19 @@ watch(
   () => props.focusRequestId,
   (reqId) => {
     if (!reqId || !map) return
-    const marker = markerInstanceMap.get(Number(reqId))
-    if (marker) {
-      map.setView(marker.getLatLng(), 15, { animate: true })
-      marker.openPopup()
-    }
+    nextTick(() => {
+      const marker = markerInstanceMap.get(Number(reqId))
+      if (marker) {
+        map.setView(marker.getLatLng(), 15, { animate: true })
+        marker.openPopup()
+      } else {
+        const req = props.requests.find((r) => Number(r.request_id) === Number(reqId))
+        const coords = req ? (req.point_coords || req.coords) : null
+        if (coords && coords.length === 2) {
+          map.setView(coords, 15, { animate: true })
+        }
+      }
+    })
   }
 )
 
@@ -112,7 +120,7 @@ async function renderData() {
 
   const engineerAssignments = new Map()
   props.assignments.forEach((a) => {
-    const engId = a.engineer_id
+    const engId = Number(a.engineer_id)
     if (!engineerAssignments.has(engId)) {
       engineerAssignments.set(engId, [])
     }
@@ -126,8 +134,8 @@ async function renderData() {
   // 1. Draw Engineers Bases and Routes
   for (let idx = 0; idx < props.engineers.length; idx++) {
     const eng = props.engineers[idx]
-    const engId = eng.id ?? idx
-    const isFiltered = props.selectedEngineerId !== null && props.selectedEngineerId !== engId
+    const engId = Number(eng.id ?? idx)
+    const isFiltered = props.selectedEngineerId !== null && Number(props.selectedEngineerId) !== engId
 
     if (isFiltered) continue
 
@@ -161,6 +169,7 @@ async function renderData() {
       markersLayer.addLayer(baseMarker)
 
       const tasks = engineerAssignments.get(engId) || []
+      const routePoints = [[lat, lon]]
 
       // Sequential Numbered Points: 1, 2, 3...
       tasks.forEach((task) => {
@@ -171,6 +180,7 @@ async function renderData() {
           const rLat = reqCoords[0]
           const rLon = reqCoords[1]
           allBounds.push([rLat, rLon])
+          routePoints.push([rLat, rLon])
 
           const orderIcon = L.divIcon({
             className: 'custom-div-icon',
@@ -185,10 +195,7 @@ async function renderData() {
               <b style="color: ${color}; font-size: 13px;">Точка #${task.order}</b> (Заказ #${task.request_id})<br/>
               <b>Инженер:</b> ${engName}<br/>
               <b>Адрес:</b> ${req ? req.address : 'Не указан'}<br/>
-              <b>Прибытие:</b> ${formatMskTime(task.planned_arrival || task.time_from)}<br/>
-              <div style="margin-top: 5px; font-weight: 600; color: #18181b; cursor: pointer; text-decoration: underline;">
-                Открыть карточку
-              </div>
+              <b>Прибытие:</b> ${formatMskTime(task.planned_arrival || task.time_from)}
             </div>
           `)
 
@@ -200,6 +207,17 @@ async function renderData() {
           markerInstanceMap.set(Number(task.request_id), marker)
         }
       })
+
+      // Draw route connecting Base -> Stop 1 -> Stop 2 -> ...
+      if (routePoints.length > 1) {
+        const polyline = L.polyline(routePoints, {
+          color: color,
+          weight: 3.5,
+          opacity: 0.85,
+          dashArray: '6, 6',
+        })
+        routesLayer.addLayer(polyline)
+      }
     }
   }
 
@@ -234,8 +252,10 @@ async function renderData() {
     })
   }
 
-  if (allBounds.length > 0) {
-    map.fitBounds(allBounds, { padding: [40, 40], maxZoom: 14 })
+  if (allBounds.length > 1) {
+    map.fitBounds(allBounds, { padding: [50, 50], maxZoom: 14 })
+  } else if (allBounds.length === 1) {
+    map.setView(allBounds[0], 13)
   }
 }
 </script>
