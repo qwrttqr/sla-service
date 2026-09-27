@@ -1,31 +1,25 @@
-import httpx
-
 from common.types import GeoPoint
+from core.clients.travel_time.base_client import BaseTravelTimeClient
+from core.clients.travel_time.exceptions import TravelTimeUnavailable
+from core.clients.travel_time.schemas import TravelTimeRequest
 
 
-class OsrmTravelTime:
-    """Computes travel time between coordinate pairs via an OSRM /table endpoint.
-    Knows nothing about vehicles, skills, equipment, or traffic — just profile + coords.
-    """
+class TravelTimeService:
+    def __init__(self, client: BaseTravelTimeClient):
+        self.client = client
 
-    def __init__(self, base_url: str, client: httpx.AsyncClient | None = None):
-        self.base_url = base_url
-        self.client = client or httpx.AsyncClient(timeout=10)
-
-    async def matrix_minutes(
+    async def get_matrix(
         self, origins: list[GeoPoint], destinations: list[GeoPoint], profile: str
     ) -> list[list[float | None]]:
-        pts = [*origins, *destinations]
-        coords = ";".join(f"{lon},{lat}" for lat, lon in pts)
-        src = ";".join(map(str, range(len(origins))))
-        dst = ";".join(str(len(origins) + i) for i in range(len(destinations)))
-        r = await self.client.get(
-            f"{self.base_url}/table/v1/{profile}/{coords}",
-            params={"sources": src, "destinations": dst, "annotations": "duration"},
-        )
-        r.raise_for_status()
-        durations = r.json()["durations"]
-        return [[s / 60 if s is not None else None for s in row] for row in durations]
+        """
+        Returns matrix of travel time as cartesian prodict of origins to destinations
+        Raises:
+            TravelTimeUnavailable - when client cannot satisfy request
+        """
+        req = TravelTimeRequest(origins=origins, destinations=destinations, profile=profile)
+        result = await self.client.matrix_minutes(req)
 
-    async def aclose(self) -> None:
-        await self.client.aclose()
+        if isinstance(result, TravelTimeUnavailable):
+            raise result
+
+        return result.durations_minutes

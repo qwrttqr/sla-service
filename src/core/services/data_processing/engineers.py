@@ -7,7 +7,8 @@ import pandas as pd
 
 from common.types import Equipment, Skill, VehicleType
 from core.entities import Engineer, Office
-from core.services.geocoder import GeocoderService
+
+from common.types import Equipment, Skill, VehicleType
 from utils.local_cache import get_from_cache, save_to_cache
 
 
@@ -113,7 +114,7 @@ class EngineerBuilder:
             address = str(row.office).lower()
             engineers.append(
                 Engineer(
-                    id=i,
+                    id=EngineeeId(i),
                     office_id=office_by_address[address].id,
                     starting_point_coords=coords_by_address[address],
                     shift_start=datetime.strptime(row.shift_start, self.DATETIME_FMT),

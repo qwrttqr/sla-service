@@ -5,9 +5,9 @@ from math import atan2, cos, radians, sin, sqrt
 
 import httpx
 
-from common.types import GeoPoint, VehicleType
+from common.types import GeoPoint
 from core.entities import Assignment, Engineer, Office, Plan, Request, UnassignedRequest
-from core.services.osrm_travel_time import OsrmTravelTime
+from core.services.osrm_travel_time import TravelTimeService
 
 VEHICLE_PROFILE: dict[VehicleType, str] = {
     VehicleType.CAR: "driving",
@@ -17,8 +17,8 @@ VEHICLE_PROFILE: dict[VehicleType, str] = {
 
 
 def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
-    lat1, lon1 = a.lat, a.lon
-    lat2, lon2 = b.lat, b.lon
+    lat1, lon1 = a
+    lat2, lon2 = b
     r = 6371.0
     dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
     h = (
@@ -35,8 +35,8 @@ def nearest_office(point: GeoPoint, offices: list[Office]) -> Office:
 @dataclass
 class EngineerState:
     engineer: Engineer
-    position: GeoPoint  # Начинаем с офиса
-    free_at: datetime  # сначала освободимся в начало своей смены
+    position: GeoPoint          # Начинаем с офиса
+    free_at: datetime         # сначала освободимся в начало своей смены
     route: list[int] = field(default_factory=list)
 
 
@@ -62,7 +62,7 @@ def is_eligible(e: Engineer, r: Request) -> bool:
 
 
 class Planner:
-    def __init__(self, travel: dict[VehicleType, OsrmTravelTime]):
+    def __init__(self, travel: dict[VehicleType, TravelTimeService]):
         self.travel = travel
 
     """
@@ -135,9 +135,7 @@ class Planner:
             if profile is None:
                 return None  # no OSRM profile for this vehicle type yet (e.g. public transport)
             try:
-                m = await self.travel[vehicle].matrix_minutes(
-                    [s.position], [req.point_coords], profile
-                )
+                m = await self.travel[vehicle].get_matrix([s.position], [req.point_coords], profile)
             except httpx.HTTPError:
                 return None
             return m[0][0]

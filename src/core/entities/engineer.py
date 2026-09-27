@@ -8,7 +8,7 @@ from common.types import Equipment, GeoPoint, Skill, VehicleType
 
 
 class Engineer(BaseModel):
-    id: int
+    id: EngineerId
     office_id: int
     starting_point_coords: GeoPoint
     shift_start: datetime
