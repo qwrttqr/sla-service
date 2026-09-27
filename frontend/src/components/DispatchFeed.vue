@@ -40,7 +40,7 @@
         @click="selectTask(task)"
       >
         <div class="visit-time-block">
-          <span class="visit-time">{{ String(task.planned_arrival).slice(0, 5) }}</span>
+          <span class="visit-time">{{ formatMskTime(task.planned_arrival || task.time_from) }}</span>
           <span class="visit-travel">{{ task.travel_minutes }}м</span>
         </div>
 
@@ -69,6 +69,7 @@ import { ref, computed } from 'vue'
 import { IconChevronRight } from '@tabler/icons-vue'
 
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime } from '../utils/dateUtils'
 
 const props = defineProps({
   assignments: { type: Array, default: () => [] },
@@ -217,6 +218,7 @@ function selectTask(task) {
 
 .visit-item {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   padding: 9px 10px;
   border-radius: 6px;

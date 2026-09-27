@@ -18,7 +18,7 @@
       <div class="timing-card">
         <div class="timing-col">
           <span class="timing-label">Прибытие</span>
-          <span class="timing-val text-accent">{{ String(task.planned_arrival).slice(0, 5) }}</span>
+          <span class="timing-val text-accent">{{ formatMskTime(task.planned_arrival || task.time_from) }}</span>
         </div>
         <div class="timing-divider"></div>
         <div class="timing-col">
@@ -81,6 +81,7 @@ import { ref, computed, watch } from 'vue'
 import { IconArrowLeft, IconX, IconTrash } from '@tabler/icons-vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime } from '../utils/dateUtils'
 
 const props = defineProps({
   task: { type: Object, default: null },
@@ -141,10 +142,7 @@ function formatWorkType(val) {
 }
 
 function formatTime(val) {
-  if (!val) return '--:--'
-  const s = String(val)
-  if (s.includes('T')) return s.slice(11, 16)
-  return s.slice(0, 5)
+  return formatMskTime(val)
 }
 
 function handleReassign() {

@@ -46,6 +46,7 @@
             <UnassignedPanel
               v-else
               :unassignedIds="unassignedIds"
+              :unassignedReasons="unassignedReasons"
               :requests="requests"
               :engineers="engineers"
               @assign-request="handleAssignUnassigned"
@@ -62,6 +63,7 @@
             :assignments="assignments"
             :requests="requests"
             :unassignedIds="unassignedIds"
+            :unassignedReasons="unassignedReasons"
             :selectedEngineerId="selectedEngineerId"
             :focusRequestId="focusRequestId"
             @reset-filter="selectedEngineerId = null"
@@ -93,7 +95,7 @@
 
       <!-- Bottom: Shift & Route Timeline Gantt (Expandable) -->
       <TimelineGantt
-        v-if="assignments.length > 0"
+        v-if="engineers.length > 0 || assignments.length > 0"
         :engineers="engineers"
         :assignments="assignments"
         :requests="requests"
@@ -140,6 +142,7 @@ import { checkBackendHealth, submitPlanningCsv } from './api/planningApi'
 import { demoEngineersCsv, demoRequestsCsv } from './utils/demoData'
 import { getCoordinatesForAddress } from './utils/geoUtils'
 import { getEngineerName } from './utils/engineers'
+import { formatMskTime } from './utils/dateUtils'
 
 const toast = useToast()
 
@@ -156,6 +159,7 @@ const engineers = ref([])
 const requests = ref([])
 const assignments = ref([])
 const unassignedIds = ref([])
+const unassignedReasons = ref({})
 
 onMounted(async () => {
   isBackendOnline.value = await checkBackendHealth()
@@ -229,13 +233,13 @@ function handleAssignUnassigned({ requestId, engineerId }) {
 
   const engTasks = assignments.value.filter((a) => Number(a.engineer_id) === Number(engineerId))
   const nextOrder = engTasks.length + 1
-  const arrivalTime = req.window_start ? String(req.window_start).slice(11, 16) : '10:00'
+  const arrivalTime = req.window_start ? formatMskTime(req.window_start) : '10:00'
 
   const newAssignment = {
     request_id: Number(requestId),
     engineer_id: Number(engineerId),
     order: nextOrder,
-    planned_arrival: `${arrivalTime}:00`,
+    planned_arrival: arrivalTime,
     travel_minutes: 20,
   }
 
@@ -389,22 +393,111 @@ function parseRequestsCsv(csvString) {
 
 function applyPlanResult(result) {
   if (!result) return
-  assignments.value = result.assignments || []
-  unassignedIds.value = result.unassigned_request_ids || []
+
+  // 1. Synchronize engineers start coordinates if returned by backend
+  if (result.engineers && Array.isArray(result.engineers)) {
+    result.engineers.forEach((be) => {
+      const existing = engineers.value.find((e) => String(e.id) === String(be.id))
+      const coords = be.start_point_lat && be.start_point_lon ? [be.start_point_lat, be.start_point_lon] : null
+      if (existing) {
+        if (coords) existing.starting_point_coords = coords
+        if (be.shift_start) existing.shift_start = be.shift_start
+        if (be.shift_end) existing.shift_end = be.shift_end
+      } else {
+        engineers.value.push({
+          id: be.id,
+          name: getEngineerName(be.id),
+          office: 'Базовый офис',
+          vehicle: 'car',
+          shift_start: be.shift_start,
+          shift_end: be.shift_end,
+          starting_point_coords: coords,
+        })
+      }
+    })
+  }
+
+  // 2. Synchronize request coordinates if returned by backend
+  if (result.requests && Array.isArray(result.requests)) {
+    result.requests.forEach((br) => {
+      const existing = requests.value.find((r) => Number(r.request_id) === Number(br.id))
+      const coords = br.point ? [br.point.lat, br.point.lon] : (br.lat && br.lon ? [br.lat, br.lon] : null)
+      if (existing) {
+        if (coords) existing.point_coords = coords
+      } else {
+        requests.value.push({
+          request_id: Number(br.id),
+          address: `Заявка #${br.id}`,
+          point_coords: coords,
+        })
+      }
+    })
+  }
+
+  // 3. Process assignments (chronologically order visits per engineer)
+  const rawAssignments = result.assignments || []
+  const engGroups = new Map()
+  rawAssignments.forEach((a) => {
+    const eId = String(a.engineer_id)
+    if (!engGroups.has(eId)) engGroups.set(eId, [])
+    engGroups.get(eId).push(a)
+  })
+
+  const mappedAssignments = []
+  engGroups.forEach((taskList) => {
+    taskList.sort((x, y) => String(x.time_from || x.planned_arrival).localeCompare(String(y.time_from || y.planned_arrival)))
+    taskList.forEach((a, idx) => {
+      const arrivalMsk = a.planned_arrival 
+        ? formatMskTime(a.planned_arrival) 
+        : (a.time_from ? formatMskTime(a.time_from) : '09:00')
+
+      mappedAssignments.push({
+        ...a,
+        engineer_id: a.engineer_id,
+        request_id: Number(a.request_id),
+        order: a.order ?? (idx + 1),
+        planned_arrival: arrivalMsk,
+        time_from: a.time_from,
+        time_to: a.time_to,
+        wait_minutes: a.wait_minutes ?? 0,
+        travel_minutes: a.travel_minutes ?? 20,
+      })
+    })
+  })
+  assignments.value = mappedAssignments
+
+  // 4. Handle unassigned requests (support both unassigned_requests with reasons and legacy IDs)
+  unassignedReasons.value = {}
+  if (result.unassigned_requests && Array.isArray(result.unassigned_requests)) {
+    unassignedIds.value = result.unassigned_requests.map((u) => {
+      const uId = Number(u.id)
+      if (u.reason) unassignedReasons.value[uId] = u.reason
+      if (u.point) {
+        const req = requests.value.find((r) => Number(r.request_id) === uId)
+        if (req) req.point_coords = [u.point.lat, u.point.lon]
+      }
+      return uId
+    })
+  } else if (result.unassigned_request_ids && Array.isArray(result.unassigned_request_ids)) {
+    unassignedIds.value = result.unassigned_request_ids.map(Number)
+  } else {
+    unassignedIds.value = []
+  }
 }
 
 function applyFallbackDemoPlan() {
   assignments.value = [
-    { request_id: 101, engineer_id: 0, order: 1, planned_arrival: '09:30:00', travel_minutes: 25 },
-    { request_id: 103, engineer_id: 0, order: 2, planned_arrival: '11:15:00', travel_minutes: 20 },
-    { request_id: 106, engineer_id: 0, order: 3, planned_arrival: '13:00:00', travel_minutes: 30 },
-    { request_id: 102, engineer_id: 1, order: 1, planned_arrival: '10:30:00', travel_minutes: 18 },
-    { request_id: 104, engineer_id: 1, order: 2, planned_arrival: '12:45:00', travel_minutes: 22 },
-    { request_id: 107, engineer_id: 1, order: 3, planned_arrival: '15:00:00', travel_minutes: 25 },
-    { request_id: 105, engineer_id: 2, order: 1, planned_arrival: '13:30:00', travel_minutes: 35 },
-    { request_id: 108, engineer_id: 2, order: 2, planned_arrival: '16:00:00', travel_minutes: 20 },
+    { request_id: 101, engineer_id: 0, order: 1, planned_arrival: '09:30', travel_minutes: 25 },
+    { request_id: 103, engineer_id: 0, order: 2, planned_arrival: '11:15', travel_minutes: 20 },
+    { request_id: 106, engineer_id: 0, order: 3, planned_arrival: '13:00', travel_minutes: 30 },
+    { request_id: 102, engineer_id: 1, order: 1, planned_arrival: '10:30', travel_minutes: 18 },
+    { request_id: 104, engineer_id: 1, order: 2, planned_arrival: '12:45', travel_minutes: 22 },
+    { request_id: 107, engineer_id: 1, order: 3, planned_arrival: '15:00', travel_minutes: 25 },
+    { request_id: 105, engineer_id: 2, order: 1, planned_arrival: '13:30', travel_minutes: 35 },
+    { request_id: 108, engineer_id: 2, order: 2, planned_arrival: '16:00', travel_minutes: 20 },
   ]
   unassignedIds.value = [109]
+  unassignedReasons.value = { 109: 'Не укладывается в окно SLA' }
 }
 </script>
 

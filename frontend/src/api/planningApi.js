@@ -7,7 +7,7 @@ const client = axios.create({
 
 export async function checkBackendHealth() {
   try {
-    await client.get('/docs', { timeout: 3000 })
+    await axios.get('/docs', { timeout: 3000 })
     return true
   } catch (err) {
     return false

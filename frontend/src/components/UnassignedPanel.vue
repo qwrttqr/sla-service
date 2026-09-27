@@ -38,6 +38,10 @@
             </span>
           </div>
 
+          <div v-if="unassignedReasons && unassignedReasons[id]" class="reason-row">
+            <span class="reason-pill" :title="unassignedReasons[id]">{{ unassignedReasons[id] }}</span>
+          </div>
+
           <!-- Dispatcher Action Controls -->
           <div class="assign-action-box" @click.stop>
             <div class="select-col">
@@ -73,9 +77,11 @@ import { ref, computed } from 'vue'
 import { IconCircleCheck, IconTrash } from '@tabler/icons-vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime } from '../utils/dateUtils'
 
 const props = defineProps({
   unassignedIds: { type: Array, default: () => [] },
+  unassignedReasons: { type: Object, default: () => ({}) },
   requests: { type: Array, default: () => [] },
   engineers: { type: Array, default: () => [] },
 })
@@ -100,10 +106,7 @@ function getRequest(id) {
 }
 
 function formatTime(val) {
-  if (!val) return '--:--'
-  const s = String(val)
-  if (s.includes('T')) return s.slice(11, 16)
-  return s.slice(0, 5)
+  return formatMskTime(val)
 }
 
 function formatWorkType(val) {
@@ -188,6 +191,7 @@ function assignToEngineer(requestId) {
 }
 
 .unassigned-card {
+  flex-shrink: 0;
   padding: 10px;
   background: #ffffff;
   border: 1px solid var(--border-color);
@@ -305,5 +309,21 @@ function assignToEngineer(requestId) {
   background: var(--danger-light);
   border-color: var(--danger-border);
   color: var(--danger);
+}
+
+.reason-row {
+  margin-top: 5px;
+}
+
+.reason-pill {
+  font-size: 0.72rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 3px 7px;
+  border-radius: 4px;
+  display: block;
+  line-height: 1.3;
+  word-break: break-word;
 }
 </style>
