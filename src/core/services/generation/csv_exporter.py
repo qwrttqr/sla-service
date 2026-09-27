@@ -5,6 +5,7 @@ ENGINEER_FIELDS = [
     "name",
     "shift_start",
     "shift_end",
+    "districts",
     "equipment",
     "skills",
     "vehicle",
@@ -14,6 +15,7 @@ ENGINEER_FIELDS = [
 REQUEST_FIELDS = [
     "request_id",
     "address",
+    "district",
     "work_type",
     "window_start",
     "window_end",

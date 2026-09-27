@@ -5,7 +5,7 @@ from math import atan2, cos, radians, sin, sqrt
 
 import httpx
 
-from common.types import GeoPoint
+from common.types import GeoPoint, VehicleType
 from core.entities import Assignment, Engineer, Office, Plan, Request, UnassignedRequest
 from core.services.osrm_travel_time import TravelTimeService
 
