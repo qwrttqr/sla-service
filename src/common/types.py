@@ -17,6 +17,13 @@ class VehicleType(str, Enum):
     BICYCLE = "bicycle"
     PUBLIC_TRANSPORT = "public_transport"
 
+    def vehicle_profile(self) -> str | None:
+        return {
+            self.CAR: "driving",
+            self.WALK: "foot",
+            self.BICYCLE: "bicycle",
+        }.get(self)
+
 
 class Skill(str, Enum):
     LOCAL_WORKS = "local_works"

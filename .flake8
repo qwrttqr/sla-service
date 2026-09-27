@@ -1,0 +1,103 @@
+[flake8]
+ignore =
+    # R504 unnecessary variable assignment before return statement.
+    R504,
+    # CCE001 normal_function should be after _inner_function
+    CCE001,
+    PIE786,
+    G200,
+    # FNE007 "and" is not recommended in functions names
+    FNE007,
+    # Q444 incorrect whitespace around equals
+    Q444,
+    # ASN001 do not use assignment (:=) expressions
+    ASN001,
+    # U100 Unused argument
+    U100,
+    # FNE003 Name of the function uses "save", but not uses "to"
+    FNE003,
+    # name EXCLUDED is not valid, must be snake_case, and cannot end with `_`
+    # PIE781: You are assigning to a variable and then returning. Instead remove the assignment and return
+    PIE781,
+    # PIE798: no-unnecessary-class: Consider using a module for namespacing instead
+    PIE798,
+    # PIE789: prefer-isinstance-type-compare: Use isinstance for comparing types
+    PIE789,
+    # R506 unnecessary elif after raise statement
+    R506,
+    # R505 unnecessary elif after return statement.
+    R505,
+    # Q449 token entity_id should be aligned to the right of the river
+    Q449,
+    # A003 class attribute "id" is shadowing a python builtin A001 variable "id" is shadowing a python builtin
+    A003,
+    # variable "id" is shadowing a python builtin
+    A001,
+    # Q447 root_keywords SELECT and FROM are not right aligned
+    Q447,
+    # VNE003 Variable names that shadow builtins are not allowed
+    VNE003,
+    # E501 Line too long
+    E501,
+    # FP003 Allowed directories: test_unit,test_integration
+    FP003,
+    # FS003 f-string missing prefix
+    FS003,
+    # AAA01 no Act block found in test
+    AAA01,
+    # PT006 wrong name(s) type in @pytest.mark.parametrize, expected tuple
+    PT006,
+    # PT004 fixture does not return anything, add leading underscore
+    PT004,
+    # SIM119 Detect potential dataclasses - useless
+    SIM119,
+    # SIM106 Handle error-cases first
+    SIM106,
+    # Allowed count of asserts is 6
+    FP005,
+    # line break before binary operator
+    W503,
+    # E203 whitespace before ':'
+    E203,
+    # Function "__init__" has 7 arguments that exceeds max allowed 6
+    CFQ002,
+    # PT014 found duplicate test cases in @pytest.mark.parametrize
+    PT014,
+    # flake8-async, исключения тут пока не работают, т.к. коды ошибок плагина не совместимы с flake8
+    # ASYNC910: Exit or return from async function with no guaranteed checkpoint or exception since function definition.
+    # ASYNC910,
+    ABS101,
+
+per-file-ignores =
+    __init__.py: F401, F403 # imported but unused, 'from module import *' used; unable to detect undefined names
+    tests/*: ECE001, CFQ002
+
+extend-immutable-calls =
+    # Depends
+    Depends,
+    fastapi.Depends,
+    fastapi.params.Depends
+    # TODO: Form и File вообще под сомнением
+    # Form
+    Form,
+    fastapi.Form,
+    fastapi.params.Form
+    # File
+    File,
+    fastapi.File,
+    fastapi.params.File
+
+class_attributes_order =
+    field,
+    nested_class,
+    magic_method,
+    property_method,
+    static_method,
+    class_method,
+    method,
+    private_method,
+    meta_class,
+
+
+exclude =
+    src/infrastructure/db/migrations/*

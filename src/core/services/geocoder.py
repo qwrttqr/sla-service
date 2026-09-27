@@ -4,7 +4,6 @@ from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest
-from common.types import GeoPoint
 
 
 class GeocoderService:

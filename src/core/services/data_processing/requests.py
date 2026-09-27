@@ -5,7 +5,8 @@ from datetime import datetime
 
 import pandas as pd
 
-from common.types import Equipment, GeoPoint, Skill, Status, VehicleType, WorkType
+from common.types import (Equipment, GeoPoint, Skill, Status, VehicleType,
+                          WorkType)
 from core.entities import Request
 from core.services.geocoder import GeocoderService
 from utils.local_cache import get_from_cache, save_to_cache

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from common.types import GeoPoint
 
+
 class TravelTimeRequest(BaseModel):
     origins: list[GeoPoint]
     destinations: list[GeoPoint]

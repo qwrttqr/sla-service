@@ -6,37 +6,16 @@ from math import atan2, cos, radians, sin, sqrt
 import httpx
 
 from common.types import GeoPoint
-from core.entities import Assignment, Engineer, Office, Plan, Request, UnassignedRequest
-from core.services.osrm_travel_time import TravelTimeService
-
-VEHICLE_PROFILE: dict[VehicleType, str] = {
-    VehicleType.CAR: "driving",
-    VehicleType.BICYCLE: "bicycle",
-    VehicleType.WALK: "foot",
-}
-
-
-def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
-    lat1, lon1 = a
-    lat2, lon2 = b
-    r = 6371.0
-    dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
-    h = (
-        sin(dlat / 2) ** 2
-        + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
-    )
-    return 2 * r * atan2(sqrt(h), sqrt(1 - h))
-
-
-def nearest_office(point: GeoPoint, offices: list[Office]) -> Office:
-    return min(offices, key=lambda o: haversine_km(o.coords, point))
+from core.entities import (Assignment, Engineer, Office, Plan, Request,
+                           UnassignedRequest)
+from core.services.travel_time import TravelTimeService
 
 
 @dataclass
 class EngineerState:
     engineer: Engineer
-    position: GeoPoint          # Начинаем с офиса
-    free_at: datetime         # сначала освободимся в начало своей смены
+    position: GeoPoint  # Начинаем с офиса
+    free_at: datetime  # сначала освободимся в начало своей смены
     route: list[int] = field(default_factory=list)
 
 
@@ -48,22 +27,9 @@ class Candidate:
     finish: datetime
 
 
-def is_eligible(e: Engineer, r: Request) -> bool:
-    if (
-        r.required_vehicle_type is not None
-        and e.vehicle_type != r.required_vehicle_type
-    ):
-        return False
-    if not r.required_skills <= e.skills:
-        return False
-    if r.required_equipment and not r.required_equipment <= e.equipment:
-        return False
-    return True
-
-
-class Planner:
-    def __init__(self, travel: dict[VehicleType, TravelTimeService]):
-        self.travel = travel
+class PlannerService:
+    def __init__(self, travel_time_service: TravelTimeService):
+        self._travel_time_service = travel_time_service
 
     """
     Выбираем инженера на заявку: сначала внутри офиса (район), при неудаче — по всему городу.
@@ -84,16 +50,16 @@ class Planner:
         unassigned: list[UnassignedRequest] = []
 
         for req in sorted(requests, key=lambda r: (r.request_start, r.priority)):
-            office = nearest_office(req.point_coords, offices)
+            office = self._get_nearest_office(req.point_coords, offices)
             district = [
                 s
                 for s in states_by_office.get(office.id, [])
-                if is_eligible(s.engineer, req)
+                if self._is_eligible(s.engineer, req)
             ]
 
             candidates = await self._evaluate(district, req)
             if not candidates:
-                city = [s for s in states if is_eligible(s.engineer, req)]
+                city = [s for s in states if self._is_eligible(s.engineer, req)]
                 candidates = await self._evaluate(city, req)
 
             if not candidates:
@@ -122,20 +88,19 @@ class Planner:
 
         return Plan(assignments=assignments, unassigned=unassigned)
 
-    """
-    Выбираем самую ближайшую по затрачиваемому времени
-    """
-
     async def _evaluate(
         self, states: list[EngineerState], req: Request
     ) -> list[Candidate]:
+        """
+        Выбираем самую ближайшую по затрачиваемому времени
+        """
+
         async def travel_min(s: EngineerState) -> float | None:
-            vehicle = s.engineer.vehicle_type
-            profile = VEHICLE_PROFILE.get(vehicle)
-            if profile is None:
-                return None  # no OSRM profile for this vehicle type yet (e.g. public transport)
+            vehicle_type = s.engineer.vehicle_type
             try:
-                m = await self.travel[vehicle].get_matrix([s.position], [req.point_coords], profile)
+                m = await self._travel_time_service.get_matrix(
+                    [s.position], [req.point_coords], vehicle_type
+                )
             except httpx.HTTPError:
                 return None
             return m[0][0]
@@ -153,3 +118,31 @@ class Planner:
                 continue
             out.append(Candidate(s, t, arrival, finish))
         return out
+
+    def _get_nearest_office(self, point: GeoPoint, offices: list[Office]) -> Office:
+        return min(offices, key=lambda o: self._haversine_km(o.coords, point))
+
+    @staticmethod
+    def _haversine_km(a: GeoPoint, b: GeoPoint) -> float:
+        lat1, lon1 = a
+        lat2, lon2 = b
+        r = 6371.0
+        dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+        h = (
+            sin(dlat / 2) ** 2
+            + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+        )
+        return 2 * r * atan2(sqrt(h), sqrt(1 - h))
+
+    @staticmethod
+    def _is_eligible(e: Engineer, r: Request) -> bool:
+        if (
+            r.required_vehicle_type is not None
+            and e.vehicle_type != r.required_vehicle_type
+        ):
+            return False
+        if not r.required_skills <= e.skills:
+            return False
+        if r.required_equipment and not r.required_equipment <= e.equipment:
+            return False
+        return True
