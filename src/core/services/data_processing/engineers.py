@@ -1,11 +1,11 @@
 import ast
 import asyncio
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
-from common.types import EngineerId
+from common.types import EngineerId, GeoPoint
 from core.entities import Engineer, Office
 
 from common.types import Equipment, Skill, VehicleType
@@ -66,6 +66,14 @@ class EngineerBuilder:
         return mapped
 
     @staticmethod
+    def __build_district_set_from_str(districts_info) -> set[str]:
+        return set(EngineerBuilder.__parse_set(districts_info))
+
+    @staticmethod
+    def _parse_datetime_utc(raw: str, fmt: str) -> datetime:
+        return datetime.strptime(raw, fmt).astimezone(timezone.utc)
+
+    @staticmethod
     def __build_vehicle_type_from_str(raw: str) -> VehicleType:
         try:
             return EngineerBuilder.VEHICLE_TYPE_MAP[raw.strip()]
@@ -73,7 +81,7 @@ class EngineerBuilder:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
     async def build_from_csv(
-        self, source: str | io.BytesIO, encoding: str = "utf-8"
+            self, source: str | io.BytesIO, encoding: str = "utf-8"
     ) -> tuple[list[Engineer], list[Office]]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
@@ -118,12 +126,13 @@ class EngineerBuilder:
                     id=EngineerId(i),
                     office_id=office_by_address[address].id,
                     starting_point_coords=coords_by_address[address],
-                    shift_start=datetime.strptime(row.shift_start, self.DATETIME_FMT),
-                    shift_end=datetime.strptime(row.shift_end, self.DATETIME_FMT),
+                    shift_start=EngineerBuilder._parse_datetime_utc(row.shift_start, self.DATETIME_FMT),
+                    shift_end=EngineerBuilder._parse_datetime_utc(row.shift_end, self.DATETIME_FMT),
                     skills=EngineerBuilder.__build_skill_set_from_str(row.skills),
                     equipment=EngineerBuilder.__build_equipment_set_from_str(
                         row.equipment
                     ),
+                    districts=EngineerBuilder.__build_district_set_from_str(row.districts),
                     vehicle_type=EngineerBuilder.__build_vehicle_type_from_str(
                         row.vehicle
                     ),

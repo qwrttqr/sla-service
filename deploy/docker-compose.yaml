@@ -9,6 +9,7 @@ services:
       OSRM_CAR_URL: http://osrm-car:5000
       OSRM_BICYCLE_URL: http://osrm-bicycle:5000
       OSRM_FOOT_URL: http://osrm-foot:5000
+      CACHE_DIR: /app/local_cache
     depends_on: [ osrm-car, osrm-bicycle, osrm-foot ]
     volumes:
       - ../local_cache:/app/local_cache

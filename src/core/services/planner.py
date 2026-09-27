@@ -22,8 +22,8 @@ def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
     r = 6371.0
     dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
     h = (
-        sin(dlat / 2) ** 2
-        + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+            sin(dlat / 2) ** 2
+            + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     )
     return 2 * r * atan2(sqrt(h), sqrt(1 - h))
 
@@ -35,8 +35,8 @@ def nearest_office(point: GeoPoint, offices: list[Office]) -> Office:
 @dataclass
 class EngineerState:
     engineer: Engineer
-    position: GeoPoint          # Начинаем с офиса
-    free_at: datetime         # сначала освободимся в начало своей смены
+    position: GeoPoint  # Начинаем с офиса
+    free_at: datetime  # сначала освободимся в начало своей смены
     route: list[int] = field(default_factory=list)
 
 
@@ -45,25 +45,28 @@ class Candidate:
     state: EngineerState
     travel_min: float
     arrival: datetime
+    start: datetime
     finish: datetime
-
-
-def is_eligible(e: Engineer, r: Request) -> bool:
-    if (
-        r.required_vehicle_type is not None
-        and e.vehicle_type != r.required_vehicle_type
-    ):
-        return False
-    if not r.required_skills <= e.skills:
-        return False
-    if r.required_equipment and not r.required_equipment <= e.equipment:
-        return False
-    return True
 
 
 class Planner:
     def __init__(self, travel: dict[VehicleType, TravelTimeService]):
         self.travel = travel
+
+    @staticmethod
+    def _is_eligible(e: Engineer, r: Request) -> bool:
+        if r.district not in e.districts:
+            return False
+        if (
+                r.required_vehicle_type is not None
+                and e.vehicle_type != r.required_vehicle_type
+        ):
+            return False
+        if not r.required_skills <= e.skills:
+            return False
+        if r.required_equipment and not r.required_equipment <= e.equipment:
+            return False
+        return True
 
     """
     Выбираем инженера на заявку: сначала внутри офиса (район), при неудаче — по всему городу.
@@ -71,7 +74,7 @@ class Planner:
     """
 
     async def build(
-        self, engineers: list[Engineer], offices: list[Office], requests: list[Request]
+            self, engineers: list[Engineer], offices: list[Office], requests: list[Request]
     ) -> Plan:
         states = [
             EngineerState(e, e.starting_point_coords, e.shift_start) for e in engineers
@@ -85,15 +88,15 @@ class Planner:
 
         for req in sorted(requests, key=lambda r: (r.request_start, r.priority)):
             office = nearest_office(req.point_coords, offices)
-            district = [
+            office_candidates = [
                 s
                 for s in states_by_office.get(office.id, [])
-                if is_eligible(s.engineer, req)
+                if self._is_eligible(s.engineer, req)
             ]
 
-            candidates = await self._evaluate(district, req)
+            candidates = await self._evaluate(office_candidates, req)
             if not candidates:
-                city = [s for s in states if is_eligible(s.engineer, req)]
+                city = [s for s in states if self._is_eligible(s.engineer, req)]
                 candidates = await self._evaluate(city, req)
 
             if not candidates:
@@ -106,7 +109,10 @@ class Planner:
                 continue
 
             # Побеждает тот, кто первым эту заявку закончит
-            best = min(candidates, key=lambda c: (c.travel_min, c.finish))
+            best = min(
+                candidates,
+                key=lambda c: ((c.start - c.arrival).total_seconds(), c.travel_min, c.finish)
+            )
             best.state.route.append(req.id)
             best.state.position = req.point_coords
             best.state.free_at = best.finish
@@ -115,7 +121,10 @@ class Planner:
                     request_id=req.id,
                     engineer_id=best.state.engineer.id,
                     order=len(best.state.route),
-                    planned_arrival=best.arrival.time(),
+                    planned_arrival=best.arrival,
+                    planned_start=best.start,
+                    planned_finish=best.finish,
+                    wait_minutes=round((best.start - best.arrival).total_seconds() / 60),
                     travel_minutes=round(best.travel_min),
                 )
             )
@@ -127,7 +136,7 @@ class Planner:
     """
 
     async def _evaluate(
-        self, states: list[EngineerState], req: Request
+            self, states: list[EngineerState], req: Request
     ) -> list[Candidate]:
         async def travel_min(s: EngineerState) -> float | None:
             vehicle = s.engineer.vehicle_type
@@ -151,5 +160,5 @@ class Planner:
             finish = start + timedelta(minutes=req.duration_minutes)
             if finish > min(req.request_end, s.engineer.shift_end):
                 continue
-            out.append(Candidate(s, t, arrival, finish))
+            out.append(Candidate(s, t, arrival, start, finish))
         return out

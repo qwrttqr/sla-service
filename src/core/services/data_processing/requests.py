@@ -87,6 +87,12 @@ class RequestBuilder:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
     @staticmethod
+    def __build_district_from_str(raw) -> str:
+        if not raw or not str(raw).strip():
+            raise ValueError(f"Missing district: {raw!r}")
+        return str(raw).strip()
+
+    @staticmethod
     def __build_work_type_from_str(raw) -> WorkType:
         try:
             return RequestBuilder.WORK_TYPE_MAP[raw.strip()]
@@ -131,10 +137,12 @@ class RequestBuilder:
         requests = []
         for row in df.itertuples():
             address = str(row.address).lower()
+            lon, lat = coords_by_address[address]
             requests.append(
                 Request(
                     id=int(row.request_id),
-                    point_coords=GeoPoint(coords_by_address[address]),
+                    point_coords=GeoPoint(lon=lon, lat=lat),
+                    district=RequestBuilder.__build_district_from_str(row.district),
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
                     request_start=datetime.strptime(

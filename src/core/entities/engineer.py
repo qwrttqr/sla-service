@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from common.types import Equipment, GeoPoint, Skill, VehicleType, EngineerId
+from common.types import Equipment, GeoPoint, Skill, VehicleType, EngineerId, District
 
 
 class Engineer(BaseModel):
@@ -15,4 +15,5 @@ class Engineer(BaseModel):
     shift_end: datetime
     skills: set[Skill] = Field(..., min_length=1, max_length=3)
     vehicle_type: VehicleType
+    districts: set[District]
     equipment: set[Equipment]

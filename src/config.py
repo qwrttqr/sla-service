@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     osrm_car_url: str = "http://localhost:5000"
     osrm_bicycle_url: str = "http://localhost:5001"
     osrm_foot_url: str = "http://localhost:5002"
+    cache_dir: str = "local_cache"
 
 
 settings = Settings()

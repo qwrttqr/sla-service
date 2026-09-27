@@ -1,10 +1,10 @@
 import json
-import os
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_DIR = Path(__file__).resolve().parents[3] / "local_cache"
-cache_path = Path(os.getenv("CACHE_DIR", _DEFAULT_DIR)) / "cache.json"
+from config import settings
+
+cache_path = Path(settings.cache_dir) / "cache.json"
 
 
 def _load() -> dict:

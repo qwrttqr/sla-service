@@ -1,19 +1,13 @@
 import io
+from datetime import timezone
 from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile
-from pydantic import BaseModel
 
 from api.dependencies import EngineerBuilderDep, PlannerDep, RequestBuilderDep
-from core.entities.assignment import Assignment
+from api.v1.schemas.planning import EngineerOut, RequestOut, AssignmentOut, PlanResult
 
 plan_router = APIRouter(prefix="/plan", tags=["planning"])
-
-
-class PlanResult(BaseModel):
-    assignments: list[Assignment]
-    unassigned_request_ids: list[int]
-
 
 @plan_router.post("/csv", response_model=PlanResult)
 async def build_plan_from_csv(
@@ -33,6 +27,29 @@ async def build_plan_from_csv(
     plan = await planner.build(engineers=engineers, offices=offices, requests=requests)
 
     return PlanResult(
-        assignments=plan.assignments,
+        engineers=[
+            EngineerOut(
+                id=e.id,
+                start_point_lat=e.starting_point_coords.lat,
+                start_point_lon=e.starting_point_coords.lon,
+                shift_start=e.shift_start,
+                shift_end=e.shift_end,
+            )
+            for e in engineers
+        ],
+        requests=[
+            RequestOut(id=r.id, lat=r.point_coords.lat, lon=r.point_coords.lon)
+            for r in requests
+        ],
+        assignments=[
+            AssignmentOut(
+                engineer_id=a.engineer_id,
+                request_id=a.request_id,
+                time_from=a.planned_start.astimezone(timezone.utc),  # actual work start, not arrival
+                time_to=a.planned_finish.astimezone(timezone.utc),
+                wait_minutes=a.wait_minutes,
+            )
+            for a in plan.assignments
+        ],
         unassigned_request_ids=[u.request_id for u in plan.unassigned],
     )

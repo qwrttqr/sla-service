@@ -23,8 +23,8 @@ def generate_dataset_zip(
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("engineers.csv", engineers_csv.encode("windows-1251"))
-        zf.writestr("requests.csv", requests_csv.encode("windows-1251"))
+        zf.writestr("engineers.csv", engineers_csv.encode("utf-8"))
+        zf.writestr("requests.csv", requests_csv.encode("utf-8"))
 
     return Response(
         content=buf.getvalue(),

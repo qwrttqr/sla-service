@@ -2,6 +2,7 @@ import logging
 
 import httpx
 
+from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest, GeocoderResponse
@@ -34,7 +35,7 @@ class YandexGeoCodeClient(BaseGeoCodeClient):
                 ]
                 pos = members[0]["GeoObject"]["Point"]["pos"]
                 lon, lat = map(float, pos.split())
-                return GeocoderResponse(longitude=lon, latitude=lat)
+                return GeocoderResponse(point=GeoPoint(lon=lon, lat=lat))
 
             except httpx.HTTPStatusError as e:
                 logger.error(

@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 
+from common.types import GeoPoint
+
 
 class GeocoderRequest(BaseModel):
     address: str
 
 
 class GeocoderResponse(BaseModel):
-    longitude: float
-    latitude: float
+    point: GeoPoint

@@ -1,6 +1,5 @@
 import asyncio
 
-from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest
@@ -30,4 +29,4 @@ class GeocoderService:
         if isinstance(response, GeocodeNotFound):
             raise response
 
-        return GeoPoint(response.latitude, response.longitude)
+        return response.point

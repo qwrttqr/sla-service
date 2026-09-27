@@ -4,7 +4,7 @@ from typing import NamedTuple
 Longitude = float
 Latitude = float
 EngineerId = str
-
+District = str
 
 class GeoPoint(NamedTuple):
     lon: Longitude
