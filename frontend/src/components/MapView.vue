@@ -19,12 +19,14 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getEngineerColor } from '../utils/colors'
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime } from '../utils/dateUtils'
 
 const props = defineProps({
   engineers: { type: Array, default: () => [] },
   assignments: { type: Array, default: () => [] },
   requests: { type: Array, default: () => [] },
   unassignedIds: { type: Array, default: () => [] },
+  unassignedReasons: { type: Object, default: () => ({}) },
   selectedEngineerId: { type: [Number, String, null], default: null },
   focusRequestId: { type: [Number, String, null], default: null },
 })
@@ -153,7 +155,7 @@ async function renderData() {
           <b style="color: ${color}; font-size: 13px;">База: ${engName}</b><br/>
           <span>Адрес: ${eng.office || 'Базовый офис'}</span><br/>
           <span>Транспорт: <b>${eng.vehicle_type || eng.vehicle || 'Авто'}</b></span><br/>
-          <span>Смена: ${eng.shift_start ? String(eng.shift_start).slice(11, 16) : '08:00'} – ${eng.shift_end ? String(eng.shift_end).slice(11, 16) : '18:00'}</span>
+          <span>Смена: ${formatMskTime(eng.shift_start)} – ${formatMskTime(eng.shift_end)}</span>
         </div>
       `)
       markersLayer.addLayer(baseMarker)
@@ -183,7 +185,7 @@ async function renderData() {
               <b style="color: ${color}; font-size: 13px;">Точка #${task.order}</b> (Заказ #${task.request_id})<br/>
               <b>Инженер:</b> ${engName}<br/>
               <b>Адрес:</b> ${req ? req.address : 'Не указан'}<br/>
-              <b>Прибытие:</b> ${String(task.planned_arrival).slice(0, 5)}<br/>
+              <b>Прибытие:</b> ${formatMskTime(task.planned_arrival || task.time_from)}<br/>
               <div style="margin-top: 5px; font-weight: 600; color: #18181b; cursor: pointer; text-decoration: underline;">
                 Открыть карточку
               </div>
@@ -222,8 +224,8 @@ async function renderData() {
           <div style="font-family: inherit; font-size: 13px; line-height: 1.5;">
             <b style="color: #ef4444; font-size: 14px;">⚠️ Не распределено: Заявка #${unId}</b><br/>
             <b>Адрес:</b> ${req ? req.address : 'Не указан'}<br/>
-            <b>Окно:</b> ${req?.window_start ? String(req.window_start).slice(11, 16) : ''} - ${req?.window_end ? String(req.window_end).slice(11, 16) : ''}<br/>
-            <span style="color: #dc2626;">Не удалось включить в расписание инженеров по SLA.</span>
+            <b>Окно:</b> ${formatMskTime(req?.window_start)} – ${formatMskTime(req?.window_end)}<br/>
+            <span style="color: #dc2626; font-size: 12px;">${props.unassignedReasons?.[unId] || 'Не удалось включить в расписание инженеров по SLA.'}</span>
           </div>
         `)
         markersLayer.addLayer(marker)

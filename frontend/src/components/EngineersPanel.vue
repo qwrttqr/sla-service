@@ -65,6 +65,7 @@ import {
 } from '@tabler/icons-vue'
 import { getEngineerColor } from '../utils/colors'
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime } from '../utils/dateUtils'
 
 const props = defineProps({
   engineers: { type: Array, default: () => [] },
@@ -99,10 +100,7 @@ function getVehicleLabel(type) {
 }
 
 function formatTime(val) {
-  if (!val) return '--:--'
-  const s = String(val)
-  if (s.includes('T')) return s.slice(11, 16)
-  return s.slice(0, 5)
+  return formatMskTime(val)
 }
 
 function getEngineerAssignmentsCount(id) {
@@ -176,14 +174,37 @@ function getEngineerTravelTime(id) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f4f4f5;
+}
+
+.engineers-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.engineers-list::-webkit-scrollbar-track {
+  background: #f4f4f5;
+  border-radius: 4px;
+}
+
+.engineers-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.engineers-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .engineer-card {
   display: flex;
+  flex-shrink: 0;
+  min-height: 62px;
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 6px;

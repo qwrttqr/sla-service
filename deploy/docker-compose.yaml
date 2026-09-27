@@ -29,3 +29,10 @@ services:
     command: osrm-routed --algorithm mld --max-table-size 1000 /data/map.osrm
     volumes: [ "../osrm/foot:/data" ]
     ports: [ "5002:5000" ]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    ports: [ "3000:3000" ]
+    depends_on: [ api ]

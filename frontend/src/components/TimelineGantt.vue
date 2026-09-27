@@ -160,6 +160,7 @@ import {
 } from '@tabler/icons-vue'
 import { getEngineerColor } from '../utils/colors'
 import { getEngineerName } from '../utils/engineers'
+import { formatMskTime, getMskMinutesFromMidnight } from '../utils/dateUtils'
 
 const props = defineProps({
   engineers: { type: Array, default: () => [] },
@@ -190,16 +191,11 @@ function formatHour(h) {
 }
 
 function formatTime(val) {
-  if (!val) return '--:--'
-  return String(val).slice(11, 16) || val
+  return formatMskTime(val)
 }
 
 function timeStringToMinutes(str) {
-  if (!str) return 0
-  const parts = String(str).split(':')
-  const h = parseInt(parts[0], 10) || 0
-  const m = parseInt(parts[1], 10) || 0
-  return h * 60 + m
+  return getMskMinutesFromMidnight(str)
 }
 
 function getSortedAssignments(engId) {
@@ -212,7 +208,7 @@ function getEngineerBlocks(engId) {
   const engAssignments = getSortedAssignments(engId)
 
   return engAssignments.map((a, i) => {
-    const plannedArrivalMinutes = timeStringToMinutes(a.planned_arrival)
+    const plannedArrivalMinutes = getMskMinutesFromMidnight(a.planned_arrival || a.time_from)
     const travelMinutes = Number(a.travel_minutes) || 15
     const travelStartMinutes = Math.max(0, plannedArrivalMinutes - travelMinutes)
     const workDurationMinutes = 40
@@ -222,7 +218,7 @@ function getEngineerBlocks(engId) {
       requestId: a.request_id,
       engineerId: engId,
       assignment: a,
-      plannedArrival: a.planned_arrival,
+      plannedArrival: formatMskTime(a.planned_arrival || a.time_from),
       travelMinutes,
       travelStartMinutes,
       workStartMinutes: plannedArrivalMinutes,
@@ -244,8 +240,8 @@ function onTaskClick(task) {
 }
 
 function getShiftStyle(eng) {
-  const startMin = eng.shift_start ? timeStringToMinutes(String(eng.shift_start).slice(11, 16)) : 8 * 60
-  const endMin = eng.shift_end ? timeStringToMinutes(String(eng.shift_end).slice(11, 16)) : 18 * 60
+  const startMin = eng.shift_start ? getMskMinutesFromMidnight(eng.shift_start) : 8 * 60
+  const endMin = eng.shift_end ? getMskMinutesFromMidnight(eng.shift_end) : 18 * 60
 
   const dayStartMinutes = START_HOUR * 60
   const offset = startMin - dayStartMinutes
