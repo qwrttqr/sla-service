@@ -1,7 +1,6 @@
 import asyncio
 from argparse import ArgumentError
-from typing import Tuple
-
+from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 
 
@@ -11,7 +10,7 @@ class GeocoderService:
         self._semaphore = asyncio.Semaphore(1)
         self._rate_limit_delay = rate_limit_delay
 
-    async def get_coordinates(self, address: str) -> Tuple[float, float]:
+    async def get_coordinates(self, address: str) -> GeoPoint:
         """
         Converts a string address into a coordinate tuple (lat, lon)
         """

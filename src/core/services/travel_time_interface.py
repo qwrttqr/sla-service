@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from common.types import VehicleType
-
-Coords = tuple[float, float]  # (lat, lon)
+from common.types import VehicleType, GeoPoint
 
 
 class TravelTimeInterface(ABC):
@@ -12,8 +10,8 @@ class TravelTimeInterface(ABC):
     @abstractmethod
     async def matrix_minutes(
         self,
-        origins: list[Coords],
-        destinations: list[Coords],
+        origins: list[GeoPoint],
+        destinations: list[GeoPoint],
         vehicle: VehicleType,
         departure: datetime,
     ) -> list[list[float | None]]:

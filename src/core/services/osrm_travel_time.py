@@ -1,7 +1,5 @@
 import httpx
-
-Coords = tuple[float, float]
-
+from common.types import GeoPoint
 
 class OsrmTravelTime:
     """Computes travel time between coordinate pairs via an OSRM /table endpoint.
@@ -12,7 +10,7 @@ class OsrmTravelTime:
         self.client = client or httpx.AsyncClient(timeout=10)
 
     async def matrix_minutes(
-        self, origins: list[Coords], destinations: list[Coords], profile: str
+        self, origins: list[GeoPoint], destinations: list[GeoPoint], profile: str
     ) -> list[list[float | None]]:
         pts = [*origins, *destinations]
         coords = ";".join(f"{lon},{lat}" for lat, lon in pts)

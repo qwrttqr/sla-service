@@ -1,11 +1,9 @@
 from datetime import datetime
-from typing import Tuple
 
 from pydantic import BaseModel, computed_field, Field
 
 from core.entities.engineer import Skill, VehicleType, Equipment
-from common.types import WorkType, Status
-
+from common.types import WorkType, Status, GeoPoint
 
 WORK_TYPE_DURATION_MAP: dict[WorkType, int] = {
     WorkType.CONNECT_CLIENT: 90,
@@ -31,7 +29,7 @@ WORK_TYPE_SKILL_MAP: dict[WorkType, Skill] = {
 
 class Request(BaseModel):
     id: int
-    point_coords: Tuple[float, float]
+    point_coords: GeoPoint
     work_type: WorkType
     request_start: datetime
     request_end: datetime

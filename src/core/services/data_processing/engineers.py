@@ -4,11 +4,10 @@ import io
 import pandas as pd
 
 from datetime import datetime
-from entities.engineer import Equipment
-from entities.office import Office
+from common.types import Equipment, VehicleType, Skill
+from core.entities import Office, Engineer
 from core.services.geocoder import GeocoderService
 from utils.local_cache import get_from_cache, save_to_cache
-from entities.engineer import Engineer, VehicleType, Skill
 
 
 class EngineerBuilder:
@@ -73,7 +72,7 @@ class EngineerBuilder:
     async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> tuple[list[Engineer], list[Office]]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
-        coords_by_address: dict[str, tuple[float, float]] = {}
+        coords_by_address: dict[str, GeoPoint] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
         for row in df.itertuples():
             address = str(row.office).lower()

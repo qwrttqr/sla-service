@@ -5,13 +5,10 @@ from math import radians, sin, cos, sqrt, atan2
 
 import httpx
 
-from core.entities.assignment import Assignment, Plan, UnassignedRequest
-from core.entities.engineer import Engineer, VehicleType
-from core.entities.office import Office
-from core.entities.request import Request
+from common.types import GeoPoint, VehicleType
+from core.entities import Assignment, Plan, UnassignedRequest, Engineer, Office, Request
 from core.services.osrm_travel_time import OsrmTravelTime
 
-Coords = tuple[float, float]
 
 VEHICLE_PROFILE: dict[VehicleType, str] = {
     VehicleType.CAR: "driving",
@@ -20,23 +17,23 @@ VEHICLE_PROFILE: dict[VehicleType, str] = {
 }
 
 
-def haversine_km(a: Coords, b: Coords) -> float:
-    lat1, lon1 = a
-    lat2, lon2 = b
+def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
+    lat1, lon1 = a.lat, a.lon
+    lat2, lon2 = b.lat, b.lon
     r = 6371.0
     dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
     h = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     return 2 * r * atan2(sqrt(h), sqrt(1 - h))
 
 
-def nearest_office(point: Coords, offices: list[Office]) -> Office:
+def nearest_office(point: GeoPoint, offices: list[Office]) -> Office:
     return min(offices, key=lambda o: haversine_km(o.coords, point))
 
 
 @dataclass
 class EngineerState:
     engineer: Engineer
-    position: Coords          # Начинаем с офиса
+    position: GeoPoint          # Начинаем с офиса
     free_at: datetime         # сначала освободимся в начало своей смены
     route: list[int] = field(default_factory=list)
 
