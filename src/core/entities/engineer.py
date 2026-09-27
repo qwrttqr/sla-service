@@ -9,7 +9,9 @@ from common.types import EngineerId, Equipment, GeoPoint, Skill, VehicleType, Di
 
 class Engineer(BaseModel):
     id: EngineerId
+    name: str
     office_id: int
+    office_name: str
     starting_point_coords: GeoPoint
     shift_start: datetime
     shift_end: datetime

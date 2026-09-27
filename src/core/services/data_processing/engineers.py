@@ -122,7 +122,9 @@ class EngineerBuilder:
             engineers.append(
                 Engineer(
                     id=EngineerId(i),
+                    name=row.name,
                     office_id=office_by_address[address].id,
+                    office_name = row.office,
                     starting_point_coords=coords_by_address[address],
                     shift_start=EngineerBuilder._parse_datetime_utc(row.shift_start, self.DATETIME_FMT),
                     shift_end=EngineerBuilder._parse_datetime_utc(row.shift_end, self.DATETIME_FMT),

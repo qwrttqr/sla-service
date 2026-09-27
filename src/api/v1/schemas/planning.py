@@ -7,6 +7,9 @@ from common.types import GeoPoint
 
 class EngineerOut(BaseModel):
     id: str
+    name: str
+    office: str
+    vehicle: str
     start_point_lat: float
     start_point_lon: float
     shift_start: datetime

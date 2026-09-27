@@ -41,6 +41,9 @@ async def build_plan_from_csv(
         engineers=[
             EngineerOut(
                 id=e.id,
+                name=e.name,
+                vehicle=e.vehicle_type.value,
+                office=e.office_name,
                 start_point_lat=e.starting_point_coords.lat,
                 start_point_lon=e.starting_point_coords.lon,
                 shift_start=e.shift_start,
