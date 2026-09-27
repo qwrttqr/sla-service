@@ -1,5 +1,5 @@
 <template>
-  <div class="timeline-container" :class="{ expanded: isExpanded }">
+  <div class="timeline-container">
     <div class="timeline-header">
       <div class="header-left">
         <IconTimeline :size="20" class="text-accent" />
@@ -36,17 +36,6 @@
             <span>Смена</span>
           </div>
         </div>
-
-        <!-- Height Expand/Collapse Button -->
-        <button
-          class="btn-expand-toggle"
-          @click="isExpanded = !isExpanded"
-          :title="isExpanded ? 'Свернуть таймлайн' : 'Развернуть таймлайн для детального просмотра'"
-        >
-          <IconMaximize v-if="!isExpanded" :size="15" />
-          <IconMinimize v-else :size="15" />
-          <span>{{ isExpanded ? 'Свернуть' : 'Развернуть' }}</span>
-        </button>
       </div>
     </div>
 
@@ -153,11 +142,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import {
-  IconTimeline,
-  IconMaximize,
-  IconMinimize,
-} from '@tabler/icons-vue'
+import { IconTimeline } from '@tabler/icons-vue'
 import { getEngineerColor } from '../utils/colors'
 import { getEngineerName } from '../utils/engineers'
 import { formatMskTime, getMskMinutesFromMidnight } from '../utils/dateUtils'
@@ -172,7 +157,6 @@ const props = defineProps({
 const emit = defineEmits(['focus-request', 'select-task'])
 
 const viewMode = ref('gantt') // 'gantt' | 'flow'
-const isExpanded = ref(false)
 
 const START_HOUR = 8
 const END_HOUR = 19
@@ -276,7 +260,7 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 10px 16px;
-  height: 220px;
+  height: 340px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -284,11 +268,6 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   position: relative;
-  transition: height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.timeline-container.expanded {
-  height: 350px;
 }
 
 .timeline-header {
@@ -368,24 +347,6 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 .box-work { background: var(--accent); }
 .box-shift { background: #f4f4f5; border: 1px solid #d4d4d8; }
 
-.btn-expand-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #f4f4f5;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.btn-expand-toggle:hover {
-  background: #e4e4e7;
-  color: var(--text-main);
-}
 
 .timeline-body {
   display: flex;

@@ -15,7 +15,11 @@
     </div>
 
     <div class="engineers-list">
+      <div v-if="engineers.length === 0" class="empty-placeholder">
+        Нет данных об инженерах.<br/>Загрузите CSV файл.
+      </div>
       <div
+        v-else
         v-for="(eng, idx) in engineers"
         :key="eng.id ?? idx"
         class="engineer-card"
@@ -298,5 +302,13 @@ function getEngineerTravelTime(id) {
 
 .pill-stat b {
   color: var(--text-main);
+}
+
+.empty-placeholder {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 </style>

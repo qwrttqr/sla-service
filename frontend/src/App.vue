@@ -9,7 +9,6 @@
       :unassignedCount="unassignedIds.length"
       @open-uploader="showUploader = true"
       @open-emergency="showEmergencyModal = true"
-      @run-demo="runDemo"
     />
 
     <!-- Main Content Layout -->
@@ -124,7 +123,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import Papa from 'papaparse'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 
@@ -139,7 +137,6 @@ import UploaderDialog from './components/UploaderDialog.vue'
 import EmergencyModal from './components/EmergencyModal.vue'
 
 import { checkBackendHealth, submitPlanningCsv } from './api/planningApi'
-import { demoEngineersCsv, demoRequestsCsv } from './utils/demoData'
 import { getCoordinatesForAddress } from './utils/geoUtils'
 import { getEngineerName } from './utils/engineers'
 import { formatMskTime } from './utils/dateUtils'
@@ -163,16 +160,16 @@ const unassignedReasons = ref({})
 
 onMounted(async () => {
   isBackendOnline.value = await checkBackendHealth()
-  setInterval(async () => {
-    isBackendOnline.value = await checkBackendHealth()
-  }, 10000)
-
-  runDemo()
 })
 
 function handleSelectTask(data) {
   selectedTask.value = data
-  focusRequestId.value = data.task?.request_id
+  if (data?.task?.request_id) {
+    focusRequestId.value = Number(data.task.request_id)
+  }
+  if (data?.task?.engineer_id !== undefined && data?.task?.engineer_id !== null) {
+    selectedEngineerId.value = Number(data.task.engineer_id)
+  }
 }
 
 function handleReassignTask({ requestId, newEngineerId }) {
@@ -305,35 +302,12 @@ function handleInjectEmergency(emergencyData) {
   })
 }
 
-async function runDemo() {
-  loading.value = true
-  try {
-    parseEngineersCsv(demoEngineersCsv)
-    parseRequestsCsv(demoRequestsCsv)
-
-    const engFile = new File([demoEngineersCsv], 'engineers.csv', { type: 'text/csv' })
-    const reqFile = new File([demoRequestsCsv], 'requests.csv', { type: 'text/csv' })
-
-    const result = await submitPlanningCsv(engFile, reqFile)
-    applyPlanResult(result)
-  } catch (err) {
-    applyFallbackDemoPlan()
-  } finally {
-    loading.value = false
-  }
-}
 
 async function handleFilesSubmit({ engineersFile, requestsFile }) {
   loading.value = true
   showUploader.value = false
 
   try {
-    const engText = await engineersFile.text()
-    const reqText = await requestsFile.text()
-
-    parseEngineersCsv(engText)
-    parseRequestsCsv(reqText)
-
     toast.add({
       severity: 'info',
       summary: 'Расчет...',
@@ -344,10 +318,13 @@ async function handleFilesSubmit({ engineersFile, requestsFile }) {
     const result = await submitPlanningCsv(engineersFile, requestsFile)
     applyPlanResult(result)
 
+    const assignedCount = result.assignments?.length || 0
+    const unassignedCount = result.unassigned_requests?.length || result.unassigned_request_ids?.length || 0
+
     toast.add({
       severity: 'success',
       summary: 'Готово!',
-      detail: `Распределено: ${result.assignments?.length || 0}, не назначено: ${result.unassigned_request_ids?.length || 0}`,
+      detail: `Распределено: ${assignedCount}, не назначено: ${unassignedCount}`,
       life: 4000,
     })
   } catch (err) {
@@ -363,74 +340,39 @@ async function handleFilesSubmit({ engineersFile, requestsFile }) {
   }
 }
 
-function parseEngineersCsv(csvString) {
-  const res = Papa.parse(csvString, { header: true, skipEmptyLines: true })
-  engineers.value = res.data.map((row, i) => ({
-    id: i,
-    name: row.name || getEngineerName(i),
-    office: row.office,
-    vehicle: row.vehicle,
-    shift_start: row.shift_start,
-    shift_end: row.shift_end,
-    skills: row.skills,
-    equipment: row.equipment,
-    starting_point_coords: getCoordinatesForAddress(row.office),
-  }))
-}
-
-function parseRequestsCsv(csvString) {
-  const res = Papa.parse(csvString, { header: true, skipEmptyLines: true })
-  requests.value = res.data.map((row, i) => ({
-    request_id: Number(row.request_id) || i + 100,
-    address: row.address,
-    status: row.status,
-    work_type: row.work_type,
-    window_start: row.window_start,
-    window_end: row.window_end,
-    point_coords: getCoordinatesForAddress(row.address),
-  }))
-}
 
 function applyPlanResult(result) {
   if (!result) return
 
-  // 1. Synchronize engineers start coordinates if returned by backend
+  // 1. Engineers from API response
   if (result.engineers && Array.isArray(result.engineers)) {
-    result.engineers.forEach((be) => {
-      const existing = engineers.value.find((e) => String(e.id) === String(be.id))
+    engineers.value = result.engineers.map((be) => {
       const coords = be.start_point_lat && be.start_point_lon ? [be.start_point_lat, be.start_point_lon] : null
-      if (existing) {
-        if (coords) existing.starting_point_coords = coords
-        if (be.shift_start) existing.shift_start = be.shift_start
-        if (be.shift_end) existing.shift_end = be.shift_end
-      } else {
-        engineers.value.push({
-          id: be.id,
-          name: getEngineerName(be.id),
-          office: 'Базовый офис',
-          vehicle: 'car',
-          shift_start: be.shift_start,
-          shift_end: be.shift_end,
-          starting_point_coords: coords,
-        })
+      return {
+        id: Number(be.id),
+        name: be.name || getEngineerName(be.id),
+        office: be.office || 'Базовый офис',
+        vehicle: be.vehicle || 'car',
+        shift_start: be.shift_start,
+        shift_end: be.shift_end,
+        starting_point_coords: coords,
       }
     })
   }
 
-  // 2. Synchronize request coordinates if returned by backend
+  // 2. Requests from API response
+  const reqList = []
   if (result.requests && Array.isArray(result.requests)) {
     result.requests.forEach((br) => {
-      const existing = requests.value.find((r) => Number(r.request_id) === Number(br.id))
       const coords = br.point ? [br.point.lat, br.point.lon] : (br.lat && br.lon ? [br.lat, br.lon] : null)
-      if (existing) {
-        if (coords) existing.point_coords = coords
-      } else {
-        requests.value.push({
-          request_id: Number(br.id),
-          address: `Заявка #${br.id}`,
-          point_coords: coords,
-        })
-      }
+      reqList.push({
+        request_id: Number(br.id),
+        address: br.address || `Заявка #${br.id}`,
+        work_type: br.work_type,
+        window_start: br.request_start,
+        window_end: br.request_end,
+        point_coords: coords,
+      })
     })
   }
 
@@ -453,7 +395,7 @@ function applyPlanResult(result) {
 
       mappedAssignments.push({
         ...a,
-        engineer_id: a.engineer_id,
+        engineer_id: Number(a.engineer_id),
         request_id: Number(a.request_id),
         order: a.order ?? (idx + 1),
         planned_arrival: arrivalMsk,
@@ -472,9 +414,23 @@ function applyPlanResult(result) {
     unassignedIds.value = result.unassigned_requests.map((u) => {
       const uId = Number(u.id)
       if (u.reason) unassignedReasons.value[uId] = u.reason
-      if (u.point) {
-        const req = requests.value.find((r) => Number(r.request_id) === uId)
-        if (req) req.point_coords = [u.point.lat, u.point.lon]
+      const coords = u.point ? [u.point.lat, u.point.lon] : null
+      const existing = reqList.find((r) => r.request_id === uId)
+      if (existing) {
+        if (coords) existing.point_coords = coords
+        if (u.address) existing.address = u.address
+        if (u.work_type) existing.work_type = u.work_type
+        if (u.request_start) existing.window_start = u.request_start
+        if (u.request_end) existing.window_end = u.request_end
+      } else {
+        reqList.push({
+          request_id: uId,
+          address: u.address || `Заявка #${uId}`,
+          work_type: u.work_type,
+          window_start: u.request_start,
+          window_end: u.request_end,
+          point_coords: coords,
+        })
       }
       return uId
     })
@@ -483,22 +439,11 @@ function applyPlanResult(result) {
   } else {
     unassignedIds.value = []
   }
+
+  requests.value = reqList
 }
 
-function applyFallbackDemoPlan() {
-  assignments.value = [
-    { request_id: 101, engineer_id: 0, order: 1, planned_arrival: '09:30', travel_minutes: 25 },
-    { request_id: 103, engineer_id: 0, order: 2, planned_arrival: '11:15', travel_minutes: 20 },
-    { request_id: 106, engineer_id: 0, order: 3, planned_arrival: '13:00', travel_minutes: 30 },
-    { request_id: 102, engineer_id: 1, order: 1, planned_arrival: '10:30', travel_minutes: 18 },
-    { request_id: 104, engineer_id: 1, order: 2, planned_arrival: '12:45', travel_minutes: 22 },
-    { request_id: 107, engineer_id: 1, order: 3, planned_arrival: '15:00', travel_minutes: 25 },
-    { request_id: 105, engineer_id: 2, order: 1, planned_arrival: '13:30', travel_minutes: 35 },
-    { request_id: 108, engineer_id: 2, order: 2, planned_arrival: '16:00', travel_minutes: 20 },
-  ]
-  unassignedIds.value = [109]
-  unassignedReasons.value = { 109: 'Не укладывается в окно SLA' }
-}
+
 </script>
 
 <style scoped>

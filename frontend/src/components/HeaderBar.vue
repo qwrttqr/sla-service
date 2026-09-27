@@ -39,15 +39,10 @@
         <span class="btn-text-short">Срочно</span>
       </button>
 
-      <button class="btn btn-outline" :disabled="loading" @click="$emit('open-uploader')" title="Загрузить CSV">
+      <button class="btn btn-yellow" :disabled="loading" @click="$emit('open-uploader')" title="Загрузить CSV">
         <IconFileSpreadsheet :size="16" />
         <span class="btn-text-full">Загрузить CSV</span>
         <span class="btn-text-short">CSV</span>
-      </button>
-
-      <button class="btn btn-yellow" :disabled="loading" @click="$emit('run-demo')" title="Демо режим">
-        <IconSparkles :size="16" />
-        <span>{{ loading ? 'Расчет...' : 'Демо' }}</span>
       </button>
     </div>
   </header>
@@ -57,7 +52,6 @@
 import { 
   IconRoute, 
   IconFileSpreadsheet, 
-  IconSparkles, 
   IconBolt
 } from '@tabler/icons-vue'
 
@@ -69,7 +63,7 @@ defineProps({
   unassignedCount: { type: Number, default: 0 },
 })
 
-defineEmits(['open-uploader', 'run-demo', 'open-emergency'])
+defineEmits(['open-uploader', 'open-emergency'])
 </script>
 
 <style scoped>
