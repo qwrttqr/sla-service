@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from common.types import GeoPoint
+
 
 class EngineerOut(BaseModel):
     id: str
@@ -13,8 +15,11 @@ class EngineerOut(BaseModel):
 
 class RequestOut(BaseModel):
     id: int
-    lat: float
-    lon: float
+    point: GeoPoint
+
+
+class UnassignedRequest(RequestOut):
+    reason: str
 
 
 class AssignmentOut(BaseModel):
@@ -29,4 +34,4 @@ class PlanResult(BaseModel):
     engineers: list[EngineerOut]
     requests: list[RequestOut]
     assignments: list[AssignmentOut]
-    unassigned_request_ids: list[int]
+    unassigned_requests: list[UnassignedRequest]

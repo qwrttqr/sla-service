@@ -91,7 +91,7 @@ class EngineerBuilder:
                 continue
             cached_coords = get_from_cache(address)
             if cached_coords is not None:
-                coords_by_address[address] = cached_coords
+                coords_by_address[address] = GeoPoint(lat=cached_coords["lat"], lon=cached_coords["lon"])
             else:
                 active_network_tasks[address] = asyncio.create_task(
                     self.geocoder_service.get_coordinates(address)
@@ -102,7 +102,7 @@ class EngineerBuilder:
 
         for address, task in active_network_tasks.items():
             coords = task.result()
-            save_to_cache(address, coords)
+            save_to_cache(address, {"lat": coords.lat, "lon": coords.lon})
             coords_by_address[address] = coords
 
         # One Office per unique address, id assigned in first-seen order.

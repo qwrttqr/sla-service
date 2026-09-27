@@ -1,15 +1,27 @@
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from math import atan2, cos, radians, sin, sqrt
 
 import httpx
 
-from common.types import GeoPoint
-from core.clients.travel_time.exceptions import TravelTimeUnavailable
+from common.types import GeoPoint, VehicleType
+from core.clients.travel_time.exceptions import TravelTimeUnavailable, TravelTimeUnsupportedTransportType
 from core.entities import (Assignment, Engineer, Office, Plan, Request,
                            UnassignedRequest)
 from core.services.travel_time import TravelTimeService
+
+# Множитель времени в пути по часу суток (по МСК), только для car/bicycle —
+# пешеходов пробки не касаются.
+TRAFFIC_JAM_COEFFICIENTS: dict[int, float] = {
+    7: 1.3, 8: 1.6, 9: 1.7, 10: 1.3,
+    11: 1.1, 12: 1.1, 13: 1.1, 14: 1.1, 15: 1.2,
+    16: 1.3, 17: 1.6, 18: 1.8, 19: 1.7, 20: 1.4,
+    21: 1.2, 22: 1.0, 23: 1.0,
+}
+DEFAULT_JAM_COEFFICIENT = 1.0
+
+VEHICLES_AFFECTED_BY_TRAFFIC = {VehicleType.CAR, VehicleType.BICYCLE}
 
 
 @dataclass
@@ -60,39 +72,54 @@ class PlannerService:
             ]
 
             candidates = await self._evaluate(office_candidates, req)
-            if not candidates:
-                city = [s for s in states if self._is_eligible(s.engineer, req)]
-                candidates = await self._evaluate(city, req)
 
-            if not candidates:
-                unassigned.append(
-                    UnassignedRequest(
+            if req.required_vehicle_type is not None:
+                try:
+                    self._travel_time_service.assert_transport_type_supported(req.required_vehicle_type.value)
+                except TravelTimeUnsupportedTransportType as e:
+                    unassigned.append(
+                        UnassignedRequest(
+                            request_id=req.id,
+                            point=req.point_coords,
+                            reason=str(e),
+                        )
+                    )
+                    continue
+
+                if not candidates:
+                    city = [s for s in states if self._is_eligible(s.engineer, req)]
+                    candidates = await self._evaluate(city, req)
+
+                if not candidates:
+                    unassigned.append(
+                        UnassignedRequest(
+                            request_id=req.id,
+                            point=GeoPoint(lat=req.point_coords.lat, lon=req.point_coords.lon),
+                            reason="Под данную заявку не нашлось инженера по требованиям",
+                        )
+                    )
+                    continue
+
+                # Побеждает тот, кто первым эту заявку закончит
+                best = min(
+                    candidates,
+                    key=lambda c: ((c.start - c.arrival).total_seconds(), c.travel_min, c.finish)
+                )
+                best.state.route.append(req.id)
+                best.state.position = req.point_coords
+                best.state.free_at = best.finish
+                assignments.append(
+                    Assignment(
                         request_id=req.id,
-                        reason="no engineer with matching vehicle/skills/equipment, or none can finish within the window/shift",
+                        engineer_id=best.state.engineer.id,
+                        order=len(best.state.route),
+                        planned_arrival=best.arrival,
+                        planned_start=best.start,
+                        planned_finish=best.finish,
+                        wait_minutes=round((best.start - best.arrival).total_seconds() / 60),
+                        travel_minutes=round(best.travel_min),
                     )
                 )
-                continue
-
-            # Побеждает тот, кто первым эту заявку закончит
-            best = min(
-                candidates,
-                key=lambda c: ((c.start - c.arrival).total_seconds(), c.travel_min, c.finish)
-            )
-            best.state.route.append(req.id)
-            best.state.position = req.point_coords
-            best.state.free_at = best.finish
-            assignments.append(
-                Assignment(
-                    request_id=req.id,
-                    engineer_id=best.state.engineer.id,
-                    order=len(best.state.route),
-                    planned_arrival=best.arrival,
-                    planned_start=best.start,
-                    planned_finish=best.finish,
-                    wait_minutes=round((best.start - best.arrival).total_seconds() / 60),
-                    travel_minutes=round(best.travel_min),
-                )
-            )
 
         return Plan(assignments=assignments, unassigned=unassigned)
 
@@ -109,7 +136,7 @@ class PlannerService:
                 m = await self._travel_time_service.get_matrix(
                     [s.position], [req.point_coords], vehicle_type
                 )
-            except (httpx.HTTPError, TravelTimeUnavailable):
+            except (httpx.HTTPError, TravelTimeUnavailable, TravelTimeUnsupportedTransportType):
                 return None
 
             return m[0][0]
@@ -120,12 +147,16 @@ class PlannerService:
         for s, t in zip(states, times):
             if t is None:  # unroutable
                 continue
-            arrival = s.free_at + timedelta(minutes=t)
+
+            coef = self._get_jam_coefficient(s.free_at, s.engineer.vehicle_type)
+            t_with_traffic = t * coef
+
+            arrival = s.free_at + timedelta(minutes=t_with_traffic)
             start = max(arrival, req.request_start)  # wait if early
             finish = start + timedelta(minutes=req.duration_minutes)
             if finish > min(req.request_end, s.engineer.shift_end):
                 continue
-            out.append(Candidate(s, t, arrival, start, finish))
+            out.append(Candidate(s, t_with_traffic, arrival, start, finish))
         return out
 
     def _get_nearest_office(self, point: GeoPoint, offices: list[Office]) -> Office:
@@ -157,3 +188,11 @@ class PlannerService:
         if r.required_equipment and not r.required_equipment <= e.equipment:
             return False
         return True
+
+    @staticmethod
+    def _get_jam_coefficient(at: datetime, vehicle_type: VehicleType) -> float:
+        MSK = timezone(timedelta(hours=3))
+        if vehicle_type not in VEHICLES_AFFECTED_BY_TRAFFIC:
+            return 1.0
+        local_hour = at.astimezone(MSK).hour
+        return TRAFFIC_JAM_COEFFICIENTS.get(local_hour, DEFAULT_JAM_COEFFICIENT)

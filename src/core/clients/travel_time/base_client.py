@@ -11,6 +11,7 @@ class BaseTravelTimeClient(ABC):
         self, req: TravelTimeRequest
     ) -> TravelTimeResponse | TravelTimeUnavailable:
         raise NotImplementedError
-
+    def is_transport_type_supported(self, transport_type: str) -> bool:
+        raise NotImplementedError
     async def aclose(self) -> None:
         """Optional resource cleanup; override if the client owns a connection."""

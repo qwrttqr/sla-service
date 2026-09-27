@@ -1,14 +1,16 @@
 from enum import Enum
-from typing import NamedTuple
+
+from pydantic import BaseModel
 
 Longitude = float
 Latitude = float
 EngineerId = str
 District = str
 
-class GeoPoint(NamedTuple):
-    lon: Longitude
+
+class GeoPoint(BaseModel):
     lat: Latitude
+    lon: Longitude
 
 
 class VehicleType(str, Enum):

@@ -1,4 +1,5 @@
 import logging
+import math
 
 import httpx
 
@@ -52,8 +53,16 @@ class OsrmTravelTimeClient(BaseTravelTimeClient):
 
         durations = r.json()["durations"]
         minutes = [
-            [s / 60 if s is not None else None for s in row] for row in durations
+            [math.ceil(s / 60) if s is not None else None for s in row] for row in durations
         ]
+        logger.info(
+            "OSRM profile=%s | origins=%s | destinations=%s | minutes=%s | url=%s",
+            req.profile,
+            [(p.lat, p.lon) for p in req.origins],
+            [(p.lat, p.lon) for p in req.destinations],
+            minutes,
+            url,
+        )
         return TravelTimeResponse(durations_minutes=minutes)
 
     async def aclose(self) -> None:

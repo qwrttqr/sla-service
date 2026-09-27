@@ -4,7 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, UploadFile
 
-from api.v1.schemas.planning import EngineerOut, RequestOut, AssignmentOut, PlanResult
+from api.v1.schemas.planning import EngineerOut, RequestOut, AssignmentOut, PlanResult, UnassignedRequest
+from common.types import GeoPoint
 from core.bootstrap import (get_engineer_builder, get_planner_service,
                             get_request_builder)
 from core.services.data_processing.engineers import EngineerBuilder
@@ -19,11 +20,11 @@ plan_router = APIRouter(prefix="/plan", tags=["planning"])
 
 @plan_router.post("/csv", response_model=PlanResult)
 async def build_plan_from_csv(
-    engineers_file: Annotated[UploadFile, File()],
-    requests_file: Annotated[UploadFile, File()],
-    planner_service: Annotated[PlannerService, Depends(get_planner_service)],
-    engineer_builder: Annotated[EngineerBuilder, Depends(get_engineer_builder)],
-    request_builder: Annotated[RequestBuilder, Depends(get_request_builder)],
+        engineers_file: Annotated[UploadFile, File()],
+        requests_file: Annotated[UploadFile, File()],
+        planner_service: Annotated[PlannerService, Depends(get_planner_service)],
+        engineer_builder: Annotated[EngineerBuilder, Depends(get_engineer_builder)],
+        request_builder: Annotated[RequestBuilder, Depends(get_request_builder)],
 ) -> PlanResult:
     engineers, offices = await engineer_builder.build_from_csv(
         io.BytesIO(await engineers_file.read())
@@ -48,7 +49,7 @@ async def build_plan_from_csv(
             for e in engineers
         ],
         requests=[
-            RequestOut(id=r.id, lat=r.point_coords.lat, lon=r.point_coords.lon)
+            RequestOut(id=r.id, point=r.point_coords)
             for r in requests
         ],
         assignments=[
@@ -61,5 +62,6 @@ async def build_plan_from_csv(
             )
             for a in plan.assignments
         ],
-        unassigned_request_ids=[u.request_id for u in plan.unassigned],
+        unassigned_requests=[UnassignedRequest(id=u.request_id, reason=u.reason, point=u.point)
+                             for u in plan.unassigned],
     )

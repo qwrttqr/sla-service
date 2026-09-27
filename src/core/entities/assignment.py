@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common.types import EngineerId
+from common.types import EngineerId, GeoPoint
 
 
 class Assignment(BaseModel):
@@ -20,6 +20,7 @@ class Assignment(BaseModel):
 
 class UnassignedRequest(BaseModel):
     request_id: int
+    point: GeoPoint
     reason: str
 
 

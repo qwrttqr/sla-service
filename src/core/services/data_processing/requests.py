@@ -121,7 +121,7 @@ class RequestBuilder:
 
             cached_coords = get_from_cache(address)
             if cached_coords is not None:
-                coords_by_address[address] = cached_coords
+                coords_by_address[address] = GeoPoint(lat=cached_coords["lat"], lon=cached_coords["lon"])
             else:
                 active_network_tasks[address] = asyncio.create_task(
                     self.geocoder_service.get_coordinates(address)
@@ -132,17 +132,16 @@ class RequestBuilder:
 
         for address, task in active_network_tasks.items():
             coords = task.result()
-            save_to_cache(address, coords)
+            save_to_cache(address, {"lat": coords.lat, "lon": coords.lon})
             coords_by_address[address] = coords
 
         requests = []
         for row in df.itertuples():
             address = str(row.address).lower()
-            lon, lat = coords_by_address[address]
             requests.append(
                 Request(
                     id=int(row.request_id),
-                    point_coords=GeoPoint(lon=lon, lat=lat),
+                    point_coords=coords_by_address[address],
                     district=RequestBuilder.__build_district_from_str(row.district),
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
@@ -161,5 +160,5 @@ class RequestBuilder:
                     ),
                 )
             )
-
         return requests
+
