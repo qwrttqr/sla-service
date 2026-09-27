@@ -1,6 +1,7 @@
 __all__ = ["Office"]
 
 from pydantic import BaseModel
+
 from common.types import GeoPoint
 
 

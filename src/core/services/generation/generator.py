@@ -1,8 +1,8 @@
 import random
 from datetime import datetime, time, timedelta, timezone
 
-from core.services.generation.address_repository import load_addresses
 from core.services.generation import dictionaries as d
+from core.services.generation.address_repository import load_addresses
 
 MSK = timezone(timedelta(hours=3))
 
@@ -42,15 +42,17 @@ def generate_engineer_rows(n: int = 12) -> list[dict]:
         equip_n = random.randint(0, len(d.ALL_EQUIPMENT))
         equipment = set(random.sample(d.ALL_EQUIPMENT, equip_n))
 
-        rows.append({
-            "name": f"Бригада {i + 1:02d}",
-            "shift_start": _combine(shift_start_t),
-            "shift_end": _combine(shift_end_t),
-            "equipment": _set_repr(equipment),
-            "skills": _set_repr(skills),
-            "vehicle": vehicle_pool[i],
-            "office": d.OFFICE,
-        })
+        rows.append(
+            {
+                "name": f"Бригада {i + 1:02d}",
+                "shift_start": _combine(shift_start_t),
+                "shift_end": _combine(shift_end_t),
+                "equipment": _set_repr(equipment),
+                "skills": _set_repr(skills),
+                "vehicle": vehicle_pool[i],
+                "office": d.OFFICE,
+            }
+        )
     return rows
 
 
@@ -88,15 +90,17 @@ def generate_request_rows(n: int = 80) -> list[dict]:
 
         required_skill = d.WORK_TYPE_SKILL_MAP[work_type]
 
-        rows.append({
-            "request_id": 100 + i,
-            "address": address,
-            "work_type": work_type,
-            "window_start": _combine(win_start_t),
-            "window_end": _combine(win_end_t),
-            "required_skills": _set_repr({required_skill}),
-            "required_vehicle": required_vehicle,
-            "status": status,
-            "required_equipment": required_equipment,
-        })
+        rows.append(
+            {
+                "request_id": 100 + i,
+                "address": address,
+                "work_type": work_type,
+                "window_start": _combine(win_start_t),
+                "window_end": _combine(win_end_t),
+                "required_skills": _set_repr({required_skill}),
+                "required_vehicle": required_vehicle,
+                "status": status,
+                "required_equipment": required_equipment,
+            }
+        )
     return rows

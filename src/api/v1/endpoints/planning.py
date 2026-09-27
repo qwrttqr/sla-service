@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
 
-from api.dependencies import PlannerDep, EngineerBuilderDep, RequestBuilderDep
+from api.dependencies import EngineerBuilderDep, PlannerDep, RequestBuilderDep
 from core.entities.assignment import Assignment
 
 plan_router = APIRouter(prefix="/plan", tags=["planning"])
@@ -23,8 +23,12 @@ async def build_plan_from_csv(
     engineer_builder: EngineerBuilderDep,
     request_builder: RequestBuilderDep,
 ) -> PlanResult:
-    engineers, offices = await engineer_builder.build_from_csv(io.BytesIO(await engineers_file.read()))
-    requests = await request_builder.build_from_csv(io.BytesIO(await requests_file.read()))
+    engineers, offices = await engineer_builder.build_from_csv(
+        io.BytesIO(await engineers_file.read())
+    )
+    requests = await request_builder.build_from_csv(
+        io.BytesIO(await requests_file.read())
+    )
 
     plan = await planner.build(engineers=engineers, offices=offices, requests=requests)
 

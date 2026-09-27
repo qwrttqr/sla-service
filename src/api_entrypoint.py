@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from api.error_handlers import register_error_handlers
-from api.v1.endpoints import planning, generation
+from api.v1.endpoints import generation, planning
+from config import Settings
 from core.entities.engineer import VehicleType
 from core.external.yandex_geocoder import YandexGeocoder
 from core.services.data_processing.engineers import EngineerBuilder
@@ -11,7 +12,6 @@ from core.services.data_processing.requests import RequestBuilder
 from core.services.geocoder import GeocoderService
 from core.services.osrm_travel_time import OsrmTravelTime
 from core.services.planner import Planner
-from config import Settings
 
 
 @asynccontextmanager

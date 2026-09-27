@@ -1,9 +1,12 @@
 import httpx
+
 from common.types import GeoPoint
+
 
 class OsrmTravelTime:
     """Computes travel time between coordinate pairs via an OSRM /table endpoint.
-    Knows nothing about vehicles, skills, equipment, or traffic — just profile + coords."""
+    Knows nothing about vehicles, skills, equipment, or traffic — just profile + coords.
+    """
 
     def __init__(self, base_url: str, client: httpx.AsyncClient | None = None):
         self.base_url = base_url

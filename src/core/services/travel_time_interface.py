@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from common.types import VehicleType, GeoPoint
+from common.types import GeoPoint, VehicleType
 
 
 class TravelTimeInterface(ABC):

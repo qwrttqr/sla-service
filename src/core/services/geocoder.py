@@ -1,5 +1,6 @@
 import asyncio
 from argparse import ArgumentError
+
 from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 

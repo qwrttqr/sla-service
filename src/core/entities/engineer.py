@@ -1,8 +1,10 @@
 __all__ = ["Engineer"]
 
-from pydantic import BaseModel, Field
 from datetime import datetime
-from common.types import Skill, VehicleType, Equipment, GeoPoint
+
+from pydantic import BaseModel, Field
+
+from common.types import Equipment, GeoPoint, Skill, VehicleType
 
 
 class Engineer(BaseModel):

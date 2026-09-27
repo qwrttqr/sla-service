@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from pydantic import BaseModel, computed_field, Field
+from pydantic import BaseModel, Field, computed_field
 
-from core.entities.engineer import Skill, VehicleType, Equipment
-from common.types import WorkType, Status, GeoPoint
+from common.types import GeoPoint, Status, WorkType
+from core.entities.engineer import Equipment, Skill, VehicleType
 
 WORK_TYPE_DURATION_MAP: dict[WorkType, int] = {
     WorkType.CONNECT_CLIENT: 90,

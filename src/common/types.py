@@ -5,9 +5,11 @@ Longitude = float
 Latitude = float
 EngineerId = str
 
+
 class GeoPoint(NamedTuple):
     lon: Longitude
     lat: Latitude
+
 
 class VehicleType(str, Enum):
     CAR = "car"

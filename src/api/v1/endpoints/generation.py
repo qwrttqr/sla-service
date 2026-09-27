@@ -4,13 +4,10 @@ import zipfile
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
+from core.services.generation.csv_exporter import engineers_to_csv, requests_to_csv
 from core.services.generation.generator import (
     generate_engineer_rows,
     generate_request_rows,
-)
-from core.services.generation.csv_exporter import (
-    engineers_to_csv,
-    requests_to_csv,
 )
 
 generation_router = APIRouter(prefix="/generate", tags=["generation"])
