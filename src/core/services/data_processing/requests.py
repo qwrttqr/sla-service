@@ -7,7 +7,7 @@ import pandas as pd
 
 from common.types import WorkType, Status
 from core.services.geocoder import GeocoderService
-from core.services.local_cache import get_from_cache, save_to_cache
+from utils.local_cache import get_from_cache, save_to_cache
 from common.types import Skill, VehicleType, Equipment
 from core.entities import Request
 

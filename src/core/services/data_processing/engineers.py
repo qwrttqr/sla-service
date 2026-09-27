@@ -7,7 +7,7 @@ from datetime import datetime
 from entities.engineer import Equipment
 from entities.office import Office
 from core.services.geocoder import GeocoderService
-from core.services.local_cache import get_from_cache, save_to_cache
+from utils.local_cache import get_from_cache, save_to_cache
 from entities.engineer import Engineer, VehicleType, Skill
 
 

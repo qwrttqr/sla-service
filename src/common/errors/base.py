@@ -15,7 +15,7 @@ class BaseError(Exception):
 class BaseErrorsBatch(Exception):
     def __init__(self, errors: list[BaseError], *args, **kwargs):
         self.errors = errors
-        super().__init__(*args, **kwargs)
+        super().__init__(*args)
 
 
 class ErrorSchema(BaseModel):
