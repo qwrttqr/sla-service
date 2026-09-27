@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, computed_field
 
 from common.types import (Equipment, GeoPoint, Skill, Status, VehicleType,
-                          WorkType)
+                          WorkType, District)
 
 WORK_TYPE_DURATION_MAP: dict[WorkType, int] = {
     WorkType.CONNECT_CLIENT: 90,

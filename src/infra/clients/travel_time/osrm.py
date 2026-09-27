@@ -1,9 +1,12 @@
+import logging
+
 import httpx
 
 from core.clients.travel_time.base_client import BaseTravelTimeClient
 from core.clients.travel_time.exceptions import TravelTimeUnavailable
-from core.clients.travel_time.schemas import (TravelTimeRequest,
-                                              TravelTimeResponse)
+from core.clients.travel_time.schemas import TravelTimeRequest, TravelTimeResponse
+
+logger = logging.getLogger(__name__)
 
 
 class OsrmTravelTimeClient(BaseTravelTimeClient):
@@ -15,13 +18,14 @@ class OsrmTravelTimeClient(BaseTravelTimeClient):
         self, req: TravelTimeRequest
     ) -> TravelTimeResponse | TravelTimeUnavailable:
         pts = [*req.origins, *req.destinations]
-        coords = ";".join(f"{lon},{lat}" for lat, lon in pts)
+        coords = ";".join(f"{p.lon},{p.lat}" for p in pts)
         src = ";".join(map(str, range(len(req.origins))))
         dst = ";".join(str(len(req.origins) + i) for i in range(len(req.destinations)))
 
+        url = f"{self.base_url}/table/v1/{req.profile}/{coords}"
         try:
             r = await self.client.get(
-                f"{self.base_url}/table/v1/{req.profile}/{coords}",
+                url,
                 params={
                     "sources": src,
                     "destinations": dst,
@@ -29,7 +33,21 @@ class OsrmTravelTimeClient(BaseTravelTimeClient):
                 },
             )
             r.raise_for_status()
-        except httpx.HTTPError:
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "OSRM %s returned %s for profile=%s (%d origins, %d dest): %s",
+                url,
+                e.response.status_code,
+                req.profile,
+                len(req.origins),
+                len(req.destinations),
+                e.response.text[:500],
+            )
+            return TravelTimeUnavailable()
+        except httpx.HTTPError as e:
+            logger.error(
+                "OSRM request failed for %s (profile=%s): %s", url, req.profile, e
+            )
             return TravelTimeUnavailable()
 
         durations = r.json()["durations"]

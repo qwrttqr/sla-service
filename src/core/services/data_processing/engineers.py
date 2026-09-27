@@ -127,6 +127,7 @@ class EngineerBuilder:
                     shift_start=EngineerBuilder._parse_datetime_utc(row.shift_start, self.DATETIME_FMT),
                     shift_end=EngineerBuilder._parse_datetime_utc(row.shift_end, self.DATETIME_FMT),
                     skills=EngineerBuilder.__build_skill_set_from_str(row.skills),
+                    districts=EngineerBuilder.__build_district_set_from_str(row.districts),
                     equipment=EngineerBuilder.__build_equipment_set_from_str(
                         row.equipment
                     ),

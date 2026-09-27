@@ -6,6 +6,7 @@ from math import atan2, cos, radians, sin, sqrt
 import httpx
 
 from common.types import GeoPoint
+from core.clients.travel_time.exceptions import TravelTimeUnavailable
 from core.entities import (Assignment, Engineer, Office, Plan, Request,
                            UnassignedRequest)
 from core.services.travel_time import TravelTimeService
@@ -108,8 +109,9 @@ class PlannerService:
                 m = await self._travel_time_service.get_matrix(
                     [s.position], [req.point_coords], vehicle_type
                 )
-            except httpx.HTTPError:
+            except (httpx.HTTPError, TravelTimeUnavailable):
                 return None
+
             return m[0][0]
 
         times = await asyncio.gather(*(travel_min(s) for s in states))
@@ -131,8 +133,8 @@ class PlannerService:
 
     @staticmethod
     def _haversine_km(a: GeoPoint, b: GeoPoint) -> float:
-        lat1, lon1 = a
-        lat2, lon2 = b
+        lat1, lon1 = a.lat, a.lon
+        lat2, lon2 = b.lat, b.lon
         r = 6371.0
         dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
         h = (
@@ -143,6 +145,8 @@ class PlannerService:
 
     @staticmethod
     def _is_eligible(e: Engineer, r: Request) -> bool:
+        if r.district not in e.districts:
+            return False
         if (
                 r.required_vehicle_type is not None
                 and e.vehicle_type != r.required_vehicle_type
