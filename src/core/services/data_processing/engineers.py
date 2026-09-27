@@ -5,10 +5,8 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from common.types import EngineerId, GeoPoint
+from common.types import EngineerId, Equipment, GeoPoint, Skill, VehicleType
 from core.entities import Engineer, Office
-
-from common.types import Equipment, Skill, VehicleType
 from core.services.geocoder import GeocoderService
 from utils.local_cache import get_from_cache, save_to_cache
 
@@ -132,7 +130,6 @@ class EngineerBuilder:
                     equipment=EngineerBuilder.__build_equipment_set_from_str(
                         row.equipment
                     ),
-                    districts=EngineerBuilder.__build_district_set_from_str(row.districts),
                     vehicle_type=EngineerBuilder.__build_vehicle_type_from_str(
                         row.vehicle
                     ),

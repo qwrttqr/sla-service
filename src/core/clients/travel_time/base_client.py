@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 
 from core.clients.travel_time.exceptions import TravelTimeUnavailable
-from core.clients.travel_time.schemas import TravelTimeRequest, TravelTimeResponse
+from core.clients.travel_time.schemas import (TravelTimeRequest,
+                                              TravelTimeResponse)
 
 
 class BaseTravelTimeClient(ABC):

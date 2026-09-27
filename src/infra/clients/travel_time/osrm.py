@@ -2,7 +2,8 @@ import httpx
 
 from core.clients.travel_time.base_client import BaseTravelTimeClient
 from core.clients.travel_time.exceptions import TravelTimeUnavailable
-from core.clients.travel_time.schemas import TravelTimeRequest, TravelTimeResponse
+from core.clients.travel_time.schemas import (TravelTimeRequest,
+                                              TravelTimeResponse)
 
 
 class OsrmTravelTimeClient(BaseTravelTimeClient):
@@ -16,9 +17,7 @@ class OsrmTravelTimeClient(BaseTravelTimeClient):
         pts = [*req.origins, *req.destinations]
         coords = ";".join(f"{lon},{lat}" for lat, lon in pts)
         src = ";".join(map(str, range(len(req.origins))))
-        dst = ";".join(
-            str(len(req.origins) + i) for i in range(len(req.destinations))
-        )
+        dst = ";".join(str(len(req.origins) + i) for i in range(len(req.destinations)))
 
         try:
             r = await self.client.get(

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from common.types import Equipment, GeoPoint, Skill, VehicleType, EngineerId, District
+from common.types import EngineerId, Equipment, GeoPoint, Skill, VehicleType
 
 
 class Engineer(BaseModel):

@@ -110,3 +110,7 @@ win_up:
 clean:
 	rm -rf osrm_arts
 	rm -rf osrm
+
+run_lint:
+    uv run python -m isort . && \
+    uv run python -m flake8 src/ tests/ --disable=ASYNC9,ASYNC102,ASYNC120
