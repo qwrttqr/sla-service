@@ -1,23 +1,10 @@
 from datetime import datetime
-from enum import Enum
 from typing import Tuple
 
 from pydantic import BaseModel, computed_field, Field
 
-from core.domain.engineer import Skill, VehicleType, Equipment
-
-class WorkType(str, Enum):
-    CONNECT_CLIENT = "connect_client"
-    EMERGENCY_WORK = "emergency_work"
-    LOCAL_WORK_OR_REPAIR = "local_work_or_repair"
-    POST_ORDER = "postorder"
-
-
-class Status(str, Enum):
-    SENT = "sent"
-    ON_THE_WAY = "on_the_way"
-    DONE = "done"
-    CANCELLED = "cancelled"
+from core.entities.engineer import Skill, VehicleType, Equipment
+from common.types import WorkType, Status
 
 
 WORK_TYPE_DURATION_MAP: dict[WorkType, int] = {

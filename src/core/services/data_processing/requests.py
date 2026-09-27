@@ -5,11 +5,11 @@ from datetime import datetime
 
 import pandas as pd
 
-from core.domain.request import WorkType, Status
+from common.types import WorkType, Status
 from core.services.geocoder import GeocoderService
 from core.services.local_cache import get_from_cache, save_to_cache
-from core.domain.engineer import Skill, VehicleType, Equipment
-from core.domain.request import Request
+from common.types import Skill, VehicleType, Equipment
+from core.entities import Request
 
 
 class RequestBuilder:

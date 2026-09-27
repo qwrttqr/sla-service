@@ -5,7 +5,7 @@ from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
 
 from api.dependencies import PlannerDep, EngineerBuilderDep, RequestBuilderDep
-from core.domain.assignment import Assignment
+from core.entities.assignment import Assignment
 
 router = APIRouter(prefix="/plan", tags=["planning"])
 

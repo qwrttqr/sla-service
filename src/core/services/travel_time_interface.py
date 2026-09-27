@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from core.domain.engineer import VehicleType
+from core.entities import VehicleType
 
 Coords = tuple[float, float]  # (lat, lon)
 

@@ -1,17 +1,18 @@
 import logging
 
 import httpx
-from core.services.geocoder_interface import GeocoderInterface
-from core.exceptions.geocoder_failure import GeocoderFailure
+from core.clients.geocode.base_client import BaseGeoCodeClient
+from core.clients.geocode.exceptions import GeocodeNotFound
 
 logger = logging.getLogger(__name__)
 
 
-class YandexGeocoder(GeocoderInterface):
+class YandexGeoCodeClient(BaseGeoCodeClient):
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.url = "https://geocode-maps.yandex.ru/v1/"
 
+    # TODO(sxtxri): модель респонса на сервисе должна обрабатываться
     async def geocode(self, address: str) -> dict:
         async with httpx.AsyncClient() as client:
             try:
