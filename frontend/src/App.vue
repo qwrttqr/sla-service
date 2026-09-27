@@ -237,7 +237,6 @@ function handleAssignUnassigned({ requestId, engineerId }) {
     engineer_id: Number(engineerId),
     order: nextOrder,
     planned_arrival: arrivalTime,
-    travel_minutes: 20,
   }
 
   assignments.value.push(newAssignment)
@@ -286,7 +285,6 @@ function handleInjectEmergency(emergencyData) {
     engineer_id: targetId,
     order: 1,
     planned_arrival: `${emergencyData.window_start}:00`,
-    travel_minutes: 16,
   }
 
   assignments.value.push(newAssignment)
@@ -402,7 +400,6 @@ function applyPlanResult(result) {
         time_from: a.time_from,
         time_to: a.time_to,
         wait_minutes: a.wait_minutes ?? 0,
-        travel_minutes: a.travel_minutes ?? 20,
       })
     })
   })

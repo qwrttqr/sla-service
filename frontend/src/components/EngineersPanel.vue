@@ -49,9 +49,6 @@
               <span class="pill-stat">
                 Заявок: <b>{{ getEngineerAssignmentsCount(eng.id ?? idx) }}</b>
               </span>
-              <span class="pill-stat">
-                В пути: <b>{{ getEngineerTravelTime(eng.id ?? idx) }}м</b>
-              </span>
             </div>
           </div>
         </div>
@@ -111,11 +108,6 @@ function getEngineerAssignmentsCount(id) {
   return props.assignments.filter((a) => Number(a.engineer_id) === Number(id)).length
 }
 
-function getEngineerTravelTime(id) {
-  return props.assignments
-    .filter((a) => Number(a.engineer_id) === Number(id))
-    .reduce((sum, a) => sum + (Number(a.travel_minutes) || 0), 0)
-}
 </script>
 
 <style scoped>

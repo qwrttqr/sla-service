@@ -17,8 +17,10 @@
       <!-- Timing & SLA Card -->
       <div class="timing-card">
         <div class="timing-col">
-          <span class="timing-label">Прибытие</span>
-          <span class="timing-val text-accent">{{ formatMskTime(task.planned_arrival || task.time_from) }}</span>
+          <span class="timing-label">Время работ</span>
+          <span class="timing-val text-accent">
+            {{ formatTime(task.time_from) }}<template v-if="task.time_to"> – {{ formatTime(task.time_to) }}</template>
+          </span>
         </div>
         <div class="timing-divider"></div>
         <div class="timing-col">
@@ -44,32 +46,9 @@
           <span class="detail-value font-medium">{{ currentEngineerName }} ({{ currentEngineerVehicle }})</span>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Время в пути:</span>
-          <span class="detail-value">{{ task.travel_minutes }} мин</span>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="actions-card">
-        <span class="section-title">Переназначение</span>
-        <div class="reassign-row">
-          <div class="dropdown-wrap">
-            <CustomDropdown
-              v-model="targetEngineerId"
-              :options="engineerDropdownOptions"
-            />
-          </div>
-          <button class="btn btn-yellow" @click="handleReassign">
-            Передать
-          </button>
-        </div>
-
-        <div class="cancel-wrap">
-          <button class="btn btn-cancel" @click="handleCancel">
-            <IconTrash :size="14" />
-            <span>Снять заявку с маршрута</span>
-          </button>
+        <div class="detail-row" v-if="task.wait_minutes > 0">
+          <span class="detail-label">Ожидание начала:</span>
+          <span class="detail-value">{{ task.wait_minutes }} мин</span>
         </div>
       </div>
     </div>
@@ -77,9 +56,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { IconArrowLeft, IconX, IconTrash } from '@tabler/icons-vue'
-import CustomDropdown from './CustomDropdown.vue'
+import { computed } from 'vue'
+import { IconArrowLeft, IconX } from '@tabler/icons-vue'
 import { getEngineerName } from '../utils/engineers'
 import { formatMskTime } from '../utils/dateUtils'
 
@@ -89,19 +67,7 @@ const props = defineProps({
   engineers: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['close', 'reassign-task', 'cancel-task'])
-
-const targetEngineerId = ref(null)
-
-watch(
-  () => props.task,
-  (newTask) => {
-    if (newTask) {
-      targetEngineerId.value = newTask.engineer_id
-    }
-  },
-  { immediate: true }
-)
+defineEmits(['close'])
 
 const currentEngineerName = computed(() => {
   const eng = props.engineers.find((e) => Number(e.id) === Number(props.task?.engineer_id))
@@ -111,17 +77,6 @@ const currentEngineerName = computed(() => {
 const currentEngineerVehicle = computed(() => {
   const eng = props.engineers.find((e) => Number(e.id) === Number(props.task?.engineer_id))
   return getVehicleLabel(eng?.vehicle || eng?.vehicle_type)
-})
-
-const engineerDropdownOptions = computed(() => {
-  return props.engineers.map((eng, idx) => {
-    const id = eng.id ?? idx
-    const name = eng.name || getEngineerName(id)
-    return {
-      label: `${name} (${getVehicleLabel(eng.vehicle || eng.vehicle_type)})`,
-      value: id,
-    }
-  })
 })
 
 function getVehicleLabel(type) {
@@ -143,18 +98,6 @@ function formatWorkType(val) {
 
 function formatTime(val) {
   return formatMskTime(val)
-}
-
-function handleReassign() {
-  if (targetEngineerId.value === props.task.engineer_id) return
-  emit('reassign-task', {
-    requestId: props.task.request_id,
-    newEngineerId: targetEngineerId.value,
-  })
-}
-
-function handleCancel() {
-  emit('cancel-task', props.task.request_id)
 }
 </script>
 

@@ -40,8 +40,8 @@
         @click="selectTask(task)"
       >
         <div class="visit-time-block">
-          <span class="visit-time">{{ formatMskTime(task.planned_arrival || task.time_from) }}</span>
-          <span class="visit-travel">{{ task.travel_minutes }}м</span>
+          <span class="visit-time">{{ formatMskTime(task.time_from || task.planned_arrival) }}</span>
+          <span class="visit-duration" v-if="task.time_to">до {{ formatMskTime(task.time_to) }}</span>
         </div>
 
         <div class="visit-divider"></div>
@@ -248,7 +248,7 @@ function selectTask(task) {
   color: var(--text-main);
 }
 
-.visit-travel {
+.visit-duration {
   font-size: 0.68rem;
   color: var(--text-muted);
 }

@@ -76,7 +76,7 @@
               <div
                 class="timeline-block block-work"
                 :style="getBlockStyle(block.workStartMinutes, block.workDurationMinutes)"
-                :title="`Заказ #${block.requestId} | Прибытие: ${block.plannedArrival} (${block.travelMinutes} мин в пути)`"
+                :title="`Заказ #${block.requestId} | Время работ: ${block.timeFormatted}`"
                 @click="onBlockClick(block)"
               >
                 <span class="block-order">{{ block.assignment.order }}</span>
@@ -113,9 +113,8 @@
 
           <!-- Sequential Assignment Steps -->
           <template v-for="task in getSortedAssignments(eng.id ?? idx)" :key="task.request_id">
-            <!-- Connector with travel time -->
+            <!-- Sequential Step Connector (no fake travel time) -->
             <div class="flow-arrow">
-              <span class="arrow-time">🚗 {{ task.travel_minutes }}м</span>
               <div class="arrow-line"></div>
             </div>
 
@@ -130,7 +129,9 @@
               </div>
               <div class="step-info">
                 <span class="step-title">Заказ #{{ task.request_id }}</span>
-                <span class="step-sub">{{ task.planned_arrival }}</span>
+                <span class="step-sub">
+                  {{ formatTime(task.time_from || task.planned_arrival) }}<template v-if="task.time_to"> – {{ formatTime(task.time_to) }}</template>
+                </span>
               </div>
             </div>
           </template>
@@ -192,21 +193,21 @@ function getEngineerBlocks(engId) {
   const engAssignments = getSortedAssignments(engId)
 
   return engAssignments.map((a, i) => {
-    const plannedArrivalMinutes = getMskMinutesFromMidnight(a.planned_arrival || a.time_from)
-    const travelMinutes = Number(a.travel_minutes) || 15
-    const travelStartMinutes = Math.max(0, plannedArrivalMinutes - travelMinutes)
-    const workDurationMinutes = 40
+    const startMinutes = a.time_from ? getMskMinutesFromMidnight(a.time_from) : getMskMinutesFromMidnight(a.planned_arrival)
+    const finishMinutes = a.time_to ? getMskMinutesFromMidnight(a.time_to) : startMinutes + 30
+    const durationMinutes = Math.max(15, finishMinutes - startMinutes)
+    const timeFormatted = a.time_from && a.time_to
+      ? `${formatMskTime(a.time_from)} – ${formatMskTime(a.time_to)}`
+      : formatMskTime(a.time_from || a.planned_arrival)
 
     return {
       id: `${engId}-${a.request_id}-${i}`,
       requestId: a.request_id,
       engineerId: engId,
       assignment: a,
-      plannedArrival: formatMskTime(a.planned_arrival || a.time_from),
-      travelMinutes,
-      travelStartMinutes,
-      workStartMinutes: plannedArrivalMinutes,
-      workDurationMinutes,
+      timeFormatted,
+      workStartMinutes: startMinutes,
+      workDurationMinutes: durationMinutes,
     }
   })
 }
@@ -610,16 +611,9 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 
 .flow-arrow {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
   flex-shrink: 0;
-}
-
-.arrow-time {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #64748b;
+  padding: 0 4px;
 }
 
 .arrow-line {

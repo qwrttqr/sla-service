@@ -195,7 +195,7 @@ async function renderData() {
               <b style="color: ${color}; font-size: 13px;">Точка #${task.order}</b> (Заказ #${task.request_id})<br/>
               <b>Инженер:</b> ${engName}<br/>
               <b>Адрес:</b> ${req ? req.address : 'Не указан'}<br/>
-              <b>Прибытие:</b> ${formatMskTime(task.planned_arrival || task.time_from)}
+              <b>Время работ:</b> ${formatMskTime(task.time_from || task.planned_arrival)}${task.time_to ? ' – ' + formatMskTime(task.time_to) : ''}
             </div>
           `)
 
