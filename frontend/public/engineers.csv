@@ -1,0 +1,5 @@
+office,shift_start,shift_end,skills,equipment,vehicle
+"г. Москва, ул. Тверская, д. 7",2026-09-27T08:00:00+03:00,2026-09-27T18:00:00+03:00,"{'skill_local_works', 'skill_connection_works'}","{'FMC', 'FTTB'}",car
+"г. Москва, ул. Арбат, д. 10",2026-09-27T09:00:00+03:00,2026-09-27T18:00:00+03:00,"{'skill_connection_works'}","{'FTTB', 'gigabit_connection'}",bicycle
+"г. Москва, пр-т Мира, д. 26",2026-09-27T08:30:00+03:00,2026-09-27T17:30:00+03:00,"{'skill_emergency_works', 'skill_local_works'}","{'FMC'}",car
+"г. Москва, Ленинский пр-т, д. 15",2026-09-27T08:00:00+03:00,2026-09-27T17:00:00+03:00,"{'skill_local_works', 'skill_emergency_works'}","{'FTTB'}",public_transport

@@ -1,5 +1,6 @@
 .venv
 .idea
+.env
 deploy/.env
 /data
 /local_cache
@@ -9,4 +10,8 @@ deploy/.env
 .eggs/
 build/
 dist/
-__pycache__
+__pycache__/
+
+# Frontend dependencies & build
+frontend/node_modules/
+frontend/dist/

@@ -1,0 +1,12 @@
+request_id,address,status,work_type,window_start,window_end,required_skills,required_vehicle,required_equipment
+101,"г. Москва, ул. Большая Дмитровка, д. 12",sent,connect_client,2026-09-27T09:00:00+03:00,2026-09-27T11:00:00+03:00,"{'skill_connection_works'}",,"{'FTTB'}"
+102,"г. Москва, ул. Новый Арбат, д. 21",sent,local_work_or_repair,2026-09-27T10:00:00+03:00,2026-09-27T13:00:00+03:00,"{'skill_local_works'}",,"{'FMC'}"
+103,"г. Москва, Цветной бульвар, д. 15",sent,emergency_work,2026-09-27T09:30:00+03:00,2026-09-27T11:30:00+03:00,"{'skill_emergency_works'}",car,"{'FMC'}"
+104,"г. Москва, ул. Садовая-Кудринская, д. 8",sent,connect_client,2026-09-27T12:00:00+03:00,2026-09-27T15:00:00+03:00,"{'skill_connection_works'}",bicycle,"{'gigabit_connection'}"
+105,"г. Москва, Кутузовский пр-т, д. 22",sent,local_work_or_repair,2026-09-27T13:00:00+03:00,2026-09-27T16:00:00+03:00,"{'skill_local_works'}",,"{'FTTB'}"
+106,"г. Москва, Ленинградский пр-т, д. 36",sent,emergency_work,2026-09-27T11:00:00+03:00,2026-09-27T13:00:00+03:00,"{'skill_emergency_works'}",car,"{'FMC'}"
+107,"г. Москва, ул. Покровка, д. 18",sent,connect_client,2026-09-27T14:00:00+03:00,2026-09-27T17:00:00+03:00,"{'skill_connection_works'}",,"{'FTTB'}"
+108,"г. Москва, ул. Вавилова, д. 5",sent,postorder,2026-09-27T15:00:00+03:00,2026-09-27T17:30:00+03:00,"{'skill_local_works'}",,"{'FTTB'}"
+109,"г. Москва, ул. Профсоюзная, д. 50",sent,local_work_or_repair,2026-09-27T09:00:00+03:00,2026-09-27T10:00:00+03:00,"{'skill_emergency_works'}",,"{'gigabit_connection'}"
+110,"г. Москва, ул Юных Ленинцев, д 83с 4",sent,connect_client,2026-09-27T14:00:00+03:00,2026-09-27T18:00:00+03:00,"{'skill_connection_works'}",,"{'FTTB'}"
+111,"г.Москва проезд Симферопольский, д.7",sent,local_work_or_repair,2026-09-27T11:00:00+03:00,2026-09-27T15:00:00+03:00,"{'skill_local_works'}",,"{'FMC'}"
