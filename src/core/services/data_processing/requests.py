@@ -5,11 +5,11 @@ from datetime import datetime
 
 import pandas as pd
 
-from common.types import WorkType, Status
+from common.types import WorkType, Status, GeoPoint
+from core.entities.request import Request
 from core.services.geocoder import GeocoderService
 from utils.local_cache import get_from_cache, save_to_cache
 from common.types import Skill, VehicleType, Equipment
-from core.entities import Request
 
 
 class RequestBuilder:
@@ -131,7 +131,7 @@ class RequestBuilder:
             requests.append(
                 Request(
                     id=int(row.request_id),
-                    point_coords=coords_by_address[address],
+                    point_coords=GeoPoint(coords_by_address[address]),
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
                     request_start=datetime.strptime(row.window_start, self.DATETIME_FMT),

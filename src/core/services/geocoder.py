@@ -1,27 +1,32 @@
 import asyncio
-from argparse import ArgumentError
-from typing import Tuple
 
 from core.clients.geocode.base_client import BaseGeoCodeClient
+from core.clients.geocode.exceptions import GeocodeNotFound
+from core.clients.geocode.schemas import GeocoderRequest
+from common.types import GeoPoint
 
 
 class GeocoderService:
-    def __init__(self, client: BaseGeoCodeClient, rate_limit_delay: float = 0.5):
+    def __init__(self, client: BaseGeoCodeClient, rate_limit_delay: float = 0.3):
         self.client = client
         self._semaphore = asyncio.Semaphore(1)
         self._rate_limit_delay = rate_limit_delay
 
-    async def get_coordinates(self, address: str) -> Tuple[float, float]:
+    async def get_coordinates(self, address: str) -> GeoPoint:
         """
-        Converts a string address into a coordinate tuple (lat, lon)
+        Converts a string address into a coordinate.
+        Raises:
+            GeocodeNotFound
         """
         # TODO(sxtxri): чет с этим сделать надо
-        # TODO(sxtxri): сервис плюс с кэшом должен работать
         if not address or not isinstance(address, str):
-            raise ArgumentError("address should be str and not None")
+            raise ValueError("address should be a non-empty str")
 
         async with self._semaphore:
-            coords = await self.client.geocode(address.strip())
+            response = await self.client.geocode(GeocoderRequest(address=address))
             await asyncio.sleep(self._rate_limit_delay)
-        # TODO(sxtxri): коорды вынести моделькой в базовые типы
-        return float(coords["lat"]), float(coords["lon"])
+
+        if isinstance(response, GeocodeNotFound):
+            raise response
+
+        return GeoPoint(response.latitude, response.longitude)

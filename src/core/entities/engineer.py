@@ -2,11 +2,11 @@ __all__ = ["Engineer"]
 
 from pydantic import BaseModel, Field
 from datetime import datetime
-from common.types import Skill, VehicleType, Equipment
+from common.types import Skill, VehicleType, Equipment, EngineerId
 
 
 class Engineer(BaseModel):
-    id: int
+    id: EngineerId
     office_id: int
     starting_point_coords: tuple[float, float]
     shift_start: datetime

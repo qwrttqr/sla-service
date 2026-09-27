@@ -5,13 +5,12 @@ from math import radians, sin, cos, sqrt, atan2
 
 import httpx
 
+from common.types import GeoPoint
 from core.entities.assignment import Assignment, Plan, UnassignedRequest
 from core.entities.engineer import Engineer, VehicleType
 from core.entities.office import Office
 from core.entities.request import Request
-from core.services.osrm_travel_time import OsrmTravelTime
-
-Coords = tuple[float, float]
+from core.services.osrm_travel_time import TravelTimeService
 
 VEHICLE_PROFILE: dict[VehicleType, str] = {
     VehicleType.CAR: "driving",
@@ -20,7 +19,7 @@ VEHICLE_PROFILE: dict[VehicleType, str] = {
 }
 
 
-def haversine_km(a: Coords, b: Coords) -> float:
+def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
     lat1, lon1 = a
     lat2, lon2 = b
     r = 6371.0
@@ -29,14 +28,14 @@ def haversine_km(a: Coords, b: Coords) -> float:
     return 2 * r * atan2(sqrt(h), sqrt(1 - h))
 
 
-def nearest_office(point: Coords, offices: list[Office]) -> Office:
+def nearest_office(point: GeoPoint, offices: list[Office]) -> Office:
     return min(offices, key=lambda o: haversine_km(o.coords, point))
 
 
 @dataclass
 class EngineerState:
     engineer: Engineer
-    position: Coords          # Начинаем с офиса
+    position: GeoPoint          # Начинаем с офиса
     free_at: datetime         # сначала освободимся в начало своей смены
     route: list[int] = field(default_factory=list)
 
@@ -60,7 +59,7 @@ def is_eligible(e: Engineer, r: Request) -> bool:
 
 
 class Planner:
-    def __init__(self, travel: dict[VehicleType, OsrmTravelTime]):
+    def __init__(self, travel: dict[VehicleType, TravelTimeService]):
         self.travel = travel
 
     """
@@ -115,7 +114,7 @@ class Planner:
             if profile is None:
                 return None  # no OSRM profile for this vehicle type yet (e.g. public transport)
             try:
-                m = await self.travel[vehicle].matrix_minutes([s.position], [req.point_coords], profile)
+                m = await self.travel[vehicle].get_matrix([s.position], [req.point_coords], profile)
             except httpx.HTTPError:
                 return None
             return m[0][0]
