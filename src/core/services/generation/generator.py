@@ -23,7 +23,6 @@ def _set_repr(s: set) -> str:
 def generate_engineer_rows(n: int = 12) -> list[dict]:
     rows = []
 
-    # распределяем транспорт равномерно
     vehicle_pool = (d.ALL_VEHICLES * (n // len(d.ALL_VEHICLES) + 1))[:n]
     random.shuffle(vehicle_pool)
 
@@ -31,21 +30,22 @@ def generate_engineer_rows(n: int = 12) -> list[dict]:
     skill_weights = [w for _, w in d.ENGINEER_SKILL_DISTRIBUTION]
 
     for i in range(n):
-        # навыки
         count = random.choices(skill_counts, weights=skill_weights)[0]
         skills = set(random.sample(d.ALL_SKILLS, count))
 
-        # смена
         shift_start_t, shift_end_t = random.choice(d.SHIFT_OPTIONS)
 
-        # оборудование: 0..3 элемента
         equip_n = random.randint(0, len(d.ALL_EQUIPMENT))
         equipment = set(random.sample(d.ALL_EQUIPMENT, equip_n))
+
+        district_n = random.randint(1, min(3, len(d.ALL_DISTRICTS)))
+        districts = set(random.sample(d.ALL_DISTRICTS, district_n))
 
         rows.append({
             "name": f"Бригада {i + 1:02d}",
             "shift_start": _combine(shift_start_t),
             "shift_end": _combine(shift_end_t),
+            "districts": _set_repr(districts),
             "equipment": _set_repr(equipment),
             "skills": _set_repr(skills),
             "vehicle": vehicle_pool[i],
@@ -87,10 +87,12 @@ def generate_request_rows(n: int = 80) -> list[dict]:
             required_equipment = _set_repr(set(random.sample(d.ALL_EQUIPMENT, k)))
 
         required_skill = d.WORK_TYPE_SKILL_MAP[work_type]
+        district = random.choice(d.ALL_DISTRICTS)
 
         rows.append({
             "request_id": 100 + i,
             "address": address,
+            "district": district,
             "work_type": work_type,
             "window_start": _combine(win_start_t),
             "window_end": _combine(win_end_t),

@@ -70,3 +70,5 @@ WORK_TYPE_SKILL_MAP = {
     "local_work_or_repair": "skill_local_works",
     "postorder": "skill_local_works",
 }
+
+ALL_DISTRICTS = [f"District {i}" for i in range(1, 20)]

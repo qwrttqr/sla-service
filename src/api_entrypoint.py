@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from api.error_handlers import register_error_handlers
 from api.v1.router import v1_router
 from core.entities.engineer import VehicleType
 from infra.clients.geocode.yandex import YandexGeoCodeClient
@@ -44,7 +43,6 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(title="SLA service", lifespan=lifespan)
     app.include_router(v1_router)
-    register_error_handlers(app)
     return app
 
 
