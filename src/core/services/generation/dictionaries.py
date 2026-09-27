@@ -31,7 +31,7 @@ ALL_SKILLS = [
     "skill_emergency_works",
 ]
 
-ALL_VEHICLES = ["car", "walk", "bicycle"] # убрал паблик транспорт
+ALL_VEHICLES = ["car", "walk", "bicycle"]  # убрал паблик транспорт
 
 ALL_EQUIPMENT = ["FMC", "FTTB", "gigabit_connection"]
 

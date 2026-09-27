@@ -1,14 +1,16 @@
 __all__ = ["Engineer"]
 
-from pydantic import BaseModel, Field
 from datetime import datetime
-from common.types import Skill, VehicleType, Equipment, EngineerId
+
+from pydantic import BaseModel, Field
+
+from common.types import Equipment, GeoPoint, Skill, VehicleType
 
 
 class Engineer(BaseModel):
     id: EngineerId
     office_id: int
-    starting_point_coords: tuple[float, float]
+    starting_point_coords: GeoPoint
     shift_start: datetime
     shift_end: datetime
     skills: set[Skill] = Field(..., min_length=1, max_length=3)

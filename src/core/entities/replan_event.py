@@ -1,10 +1,12 @@
 __all__ = ["ReplanEvent"]
 
-from pydantic import BaseModel
 from datetime import time
 
-from core.entities.request import Request
+from pydantic import BaseModel
+
 from common.types import EngineerId
+from core.entities.request import Request
+
 
 class ReplanEvent(BaseModel):
     event_type: int

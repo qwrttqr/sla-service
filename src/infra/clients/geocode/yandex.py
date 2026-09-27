@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+
 from core.clients.geocode.base_client import BaseGeoCodeClient
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest, GeocoderResponse
@@ -18,13 +19,19 @@ class YandexGeoCodeClient(BaseGeoCodeClient):
             try:
                 response = await client.get(
                     self.url,
-                    params={"apikey": self.api_key, "geocode": req.address,
-                            "format": "json", "results": 1},
+                    params={
+                        "apikey": self.api_key,
+                        "geocode": req.address,
+                        "format": "json",
+                        "results": 1,
+                    },
                     timeout=5.0,
                 )
                 response.raise_for_status()
 
-                members = response.json()["response"]["GeoObjectCollection"]["featureMember"]
+                members = response.json()["response"]["GeoObjectCollection"][
+                    "featureMember"
+                ]
                 pos = members[0]["GeoObject"]["Point"]["pos"]
                 lon, lat = map(float, pos.split())
                 return GeocoderResponse(longitude=lon, latitude=lat)
@@ -32,6 +39,8 @@ class YandexGeoCodeClient(BaseGeoCodeClient):
             except httpx.HTTPStatusError as e:
                 logger.error(
                     "Yandex geocoder HTTP %s for address %r: %s",
-                    e.response.status_code, req.address, e.response.text[:500],
+                    e.response.status_code,
+                    req.address,
+                    e.response.text[:500],
                 )
                 return GeocodeNotFound()

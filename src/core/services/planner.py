@@ -1,15 +1,12 @@
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from math import radians, sin, cos, sqrt, atan2
+from math import atan2, cos, radians, sin, sqrt
 
 import httpx
 
 from common.types import GeoPoint
-from core.entities.assignment import Assignment, Plan, UnassignedRequest
-from core.entities.engineer import Engineer, VehicleType
-from core.entities.office import Office
-from core.entities.request import Request
+from core.entities import Assignment, Engineer, Office, Plan, Request, UnassignedRequest
 from core.services.osrm_travel_time import TravelTimeService
 
 VEHICLE_PROFILE: dict[VehicleType, str] = {
@@ -24,7 +21,10 @@ def haversine_km(a: GeoPoint, b: GeoPoint) -> float:
     lat2, lon2 = b
     r = 6371.0
     dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
-    h = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    h = (
+        sin(dlat / 2) ** 2
+        + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    )
     return 2 * r * atan2(sqrt(h), sqrt(1 - h))
 
 
@@ -49,7 +49,10 @@ class Candidate:
 
 
 def is_eligible(e: Engineer, r: Request) -> bool:
-    if r.required_vehicle_type is not None and e.vehicle_type != r.required_vehicle_type:
+    if (
+        r.required_vehicle_type is not None
+        and e.vehicle_type != r.required_vehicle_type
+    ):
         return False
     if not r.required_skills <= e.skills:
         return False
@@ -66,8 +69,13 @@ class Planner:
     Выбираем инженера на заявку: сначала внутри офиса (район), при неудаче — по всему городу.
     Более ранние заявки идут первыми, после по приоритету.
     """
-    async def build(self, engineers: list[Engineer], offices: list[Office], requests: list[Request]) -> Plan:
-        states = [EngineerState(e, e.starting_point_coords, e.shift_start) for e in engineers]
+
+    async def build(
+        self, engineers: list[Engineer], offices: list[Office], requests: list[Request]
+    ) -> Plan:
+        states = [
+            EngineerState(e, e.starting_point_coords, e.shift_start) for e in engineers
+        ]
         states_by_office: dict[int, list[EngineerState]] = {}
         for s in states:
             states_by_office.setdefault(s.engineer.office_id, []).append(s)
@@ -77,7 +85,11 @@ class Planner:
 
         for req in sorted(requests, key=lambda r: (r.request_start, r.priority)):
             office = nearest_office(req.point_coords, offices)
-            district = [s for s in states_by_office.get(office.id, []) if is_eligible(s.engineer, req)]
+            district = [
+                s
+                for s in states_by_office.get(office.id, [])
+                if is_eligible(s.engineer, req)
+            ]
 
             candidates = await self._evaluate(district, req)
             if not candidates:
@@ -85,8 +97,12 @@ class Planner:
                 candidates = await self._evaluate(city, req)
 
             if not candidates:
-                unassigned.append(UnassignedRequest(
-                    request_id=req.id, reason="no engineer with matching vehicle/skills/equipment, or none can finish within the window/shift"))
+                unassigned.append(
+                    UnassignedRequest(
+                        request_id=req.id,
+                        reason="no engineer with matching vehicle/skills/equipment, or none can finish within the window/shift",
+                    )
+                )
                 continue
 
             # Побеждает тот, кто первым эту заявку закончит
@@ -94,20 +110,25 @@ class Planner:
             best.state.route.append(req.id)
             best.state.position = req.point_coords
             best.state.free_at = best.finish
-            assignments.append(Assignment(
-                request_id=req.id,
-                engineer_id=best.state.engineer.id,
-                order=len(best.state.route),
-                planned_arrival=best.arrival.time(),
-                travel_minutes=round(best.travel_min),
-            ))
+            assignments.append(
+                Assignment(
+                    request_id=req.id,
+                    engineer_id=best.state.engineer.id,
+                    order=len(best.state.route),
+                    planned_arrival=best.arrival.time(),
+                    travel_minutes=round(best.travel_min),
+                )
+            )
 
         return Plan(assignments=assignments, unassigned=unassigned)
 
     """
     Выбираем самую ближайшую по затрачиваемому времени
     """
-    async def _evaluate(self, states: list[EngineerState], req: Request) -> list[Candidate]:
+
+    async def _evaluate(
+        self, states: list[EngineerState], req: Request
+    ) -> list[Candidate]:
         async def travel_min(s: EngineerState) -> float | None:
             vehicle = s.engineer.vehicle_type
             profile = VEHICLE_PROFILE.get(vehicle)

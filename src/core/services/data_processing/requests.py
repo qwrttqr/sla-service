@@ -5,11 +5,10 @@ from datetime import datetime
 
 import pandas as pd
 
-from common.types import WorkType, Status, GeoPoint
-from core.entities.request import Request
+from common.types import Equipment, GeoPoint, Skill, Status, VehicleType, WorkType
+from core.entities import Request
 from core.services.geocoder import GeocoderService
 from utils.local_cache import get_from_cache, save_to_cache
-from common.types import Skill, VehicleType, Equipment
 
 
 class RequestBuilder:
@@ -101,10 +100,12 @@ class RequestBuilder:
         except KeyError:
             raise ValueError(f"Unknown work type type: {raw!r}")
 
-    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> list[Request]:
+    async def build_from_csv(
+        self, source: str | io.BytesIO, encoding: str = "utf-8"
+    ) -> list[Request]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
-        coords_by_address: dict[str, tuple[float, float]] = {}
+        coords_by_address: dict[str, GeoPoint] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
         for row in df.itertuples():
             address = str(row.address).lower()
@@ -115,7 +116,9 @@ class RequestBuilder:
             if cached_coords is not None:
                 coords_by_address[address] = cached_coords
             else:
-                active_network_tasks[address] = asyncio.create_task(self.geocoder_service.get_coordinates(address))
+                active_network_tasks[address] = asyncio.create_task(
+                    self.geocoder_service.get_coordinates(address)
+                )
 
         if active_network_tasks:
             await asyncio.gather(*active_network_tasks.values())
@@ -134,11 +137,19 @@ class RequestBuilder:
                     point_coords=GeoPoint(coords_by_address[address]),
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
-                    request_start=datetime.strptime(row.window_start, self.DATETIME_FMT),
+                    request_start=datetime.strptime(
+                        row.window_start, self.DATETIME_FMT
+                    ),
                     request_end=datetime.strptime(row.window_end, self.DATETIME_FMT),
-                    required_skills=RequestBuilder.__build_skill_set_from_str(row.required_skills),
-                    required_vehicle_type=RequestBuilder.__build_vehicle_type_from_str(row.required_vehicle),
-                    required_equipment=RequestBuilder.__build_equipment_set_from_str(row.required_equipment),
+                    required_skills=RequestBuilder.__build_skill_set_from_str(
+                        row.required_skills
+                    ),
+                    required_vehicle_type=RequestBuilder.__build_vehicle_type_from_str(
+                        row.required_vehicle
+                    ),
+                    required_equipment=RequestBuilder.__build_equipment_set_from_str(
+                        row.required_equipment
+                    ),
                 )
             )
 

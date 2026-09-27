@@ -10,15 +10,12 @@ from core.services.data_processing.requests import RequestBuilder
 from core.services.geocoder import GeocoderService
 from core.services.osrm_travel_time import TravelTimeService
 from core.services.planner import Planner
-from config import Settings
+from config import settings
 from infra.clients.travel_time.osrm import OsrmTravelTimeClient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # noinspection PyArgumentList
-    settings = Settings()
-
     geocoder = GeocoderService(
         YandexGeoCodeClient(settings.yandex_geocoder_api_key.get_secret_value())
     )

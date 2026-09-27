@@ -1,14 +1,14 @@
 import ast
 import asyncio
 import io
-import pandas as pd
-
 from datetime import datetime
 
+import pandas as pd
+
 from common.types import Equipment, Skill, VehicleType
-from core.entities.engineer import Engineer
-from core.entities.office import Office
-from core.services.geocoder import GeocoderService
+from core.entities import Engineer, Office
+
+from common.types import Equipment, Skill, VehicleType
 from utils.local_cache import get_from_cache, save_to_cache
 
 
@@ -71,10 +71,12 @@ class EngineerBuilder:
         except KeyError:
             raise ValueError(f"Unknown vehicle type: {raw!r}")
 
-    async def build_from_csv(self, source: str | io.BytesIO, encoding: str = "utf-8") -> tuple[list[Engineer], list[Office]]:
+    async def build_from_csv(
+        self, source: str | io.BytesIO, encoding: str = "utf-8"
+    ) -> tuple[list[Engineer], list[Office]]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
-        coords_by_address: dict[str, tuple[float, float]] = {}
+        coords_by_address: dict[str, GeoPoint] = {}
         active_network_tasks: dict[str, asyncio.Task] = {}
         for row in df.itertuples():
             address = str(row.office).lower()
@@ -84,7 +86,9 @@ class EngineerBuilder:
             if cached_coords is not None:
                 coords_by_address[address] = cached_coords
             else:
-                active_network_tasks[address] = asyncio.create_task(self.geocoder_service.get_coordinates(address))
+                active_network_tasks[address] = asyncio.create_task(
+                    self.geocoder_service.get_coordinates(address)
+                )
 
         if active_network_tasks:
             await asyncio.gather(*active_network_tasks.values())
@@ -98,7 +102,9 @@ class EngineerBuilder:
         office_by_address: dict[str, Office] = {}
         offices: list[Office] = []
         for address in coords_by_address:
-            office = Office(id=len(offices), address=address, coords=coords_by_address[address])
+            office = Office(
+                id=len(offices), address=address, coords=coords_by_address[address]
+            )
             office_by_address[address] = office
             offices.append(office)
 
@@ -108,14 +114,18 @@ class EngineerBuilder:
             address = str(row.office).lower()
             engineers.append(
                 Engineer(
-                    id=str(i),
+                    id=EngineeeId(i),
                     office_id=office_by_address[address].id,
                     starting_point_coords=coords_by_address[address],
                     shift_start=datetime.strptime(row.shift_start, self.DATETIME_FMT),
                     shift_end=datetime.strptime(row.shift_end, self.DATETIME_FMT),
                     skills=EngineerBuilder.__build_skill_set_from_str(row.skills),
-                    equipment=EngineerBuilder.__build_equipment_set_from_str(row.equipment),
-                    vehicle_type=EngineerBuilder.__build_vehicle_type_from_str(row.vehicle),
+                    equipment=EngineerBuilder.__build_equipment_set_from_str(
+                        row.equipment
+                    ),
+                    vehicle_type=EngineerBuilder.__build_vehicle_type_from_str(
+                        row.vehicle
+                    ),
                 )
             )
 

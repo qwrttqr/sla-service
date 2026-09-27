@@ -1,8 +1,10 @@
+import random
 from functools import lru_cache
 from pathlib import Path
-import random
 
-ADDRESSES_FILE = Path(__file__).resolve().parents[4] / "data" / "addresses" / "moscow_vao.csv"
+ADDRESSES_FILE = (
+    Path(__file__).resolve().parents[4] / "data" / "addresses" / "moscow_vao.csv"
+)
 
 
 @lru_cache(maxsize=1)
@@ -23,11 +25,7 @@ def load_addresses() -> tuple[str, ...]:
     lines = ADDRESSES_FILE.read_text(encoding="utf-8").splitlines()
 
     # пропускаем первую строку (заголовок 'address')
-    addresses = [
-        line.strip().strip('"')
-        for line in lines[1:]
-        if line.strip()
-    ]
+    addresses = [line.strip().strip('"') for line in lines[1:] if line.strip()]
 
     if not addresses:
         raise RuntimeError(f"Файл с адресами пуст: {ADDRESSES_FILE}")

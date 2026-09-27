@@ -23,6 +23,7 @@ def _set_repr(s: set) -> str:
 def generate_engineer_rows(n: int = 12) -> list[dict]:
     rows = []
 
+    # распределяем транспорт равномерно
     vehicle_pool = (d.ALL_VEHICLES * (n // len(d.ALL_VEHICLES) + 1))[:n]
     random.shuffle(vehicle_pool)
 
@@ -30,11 +31,14 @@ def generate_engineer_rows(n: int = 12) -> list[dict]:
     skill_weights = [w for _, w in d.ENGINEER_SKILL_DISTRIBUTION]
 
     for i in range(n):
+        # навыки
         count = random.choices(skill_counts, weights=skill_weights)[0]
         skills = set(random.sample(d.ALL_SKILLS, count))
 
+        # смена
         shift_start_t, shift_end_t = random.choice(d.SHIFT_OPTIONS)
 
+        # оборудование: 0..3 элемента
         equip_n = random.randint(0, len(d.ALL_EQUIPMENT))
         equipment = set(random.sample(d.ALL_EQUIPMENT, equip_n))
 

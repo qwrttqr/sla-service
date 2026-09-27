@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest, GeocoderResponse
 
@@ -9,5 +10,5 @@ class BaseGeoCodeClient(ABC):
     """
 
     @abstractmethod
-    async def geocode(self, req: GeocoderRequest) -> GeocoderResponse| GeocodeNotFound:
+    async def geocode(self, req: GeocoderRequest) -> GeocoderResponse | GeocodeNotFound:
         raise NotImplementedError

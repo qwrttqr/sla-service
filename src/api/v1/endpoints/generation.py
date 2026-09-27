@@ -4,19 +4,16 @@ import zipfile
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
+from core.services.generation.csv_exporter import engineers_to_csv, requests_to_csv
 from core.services.generation.generator import (
     generate_engineer_rows,
     generate_request_rows,
 )
-from core.services.generation.csv_exporter import (
-    engineers_to_csv,
-    requests_to_csv,
-)
 
-router = APIRouter(prefix="/generate", tags=["generation"])
+generation_router = APIRouter(prefix="/generate", tags=["generation"])
 
 
-@router.get("/dataset.zip")
+@generation_router.get("/dataset.zip")
 def generate_dataset_zip(
     engineers_count: int = Query(12, ge=1, le=50),
     requests_count: int = Query(80, ge=1, le=200),
