@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common.types import GeoPoint
+from common.types import GeoPoint, WorkType
 
 
 class EngineerOut(BaseModel):
@@ -18,6 +18,10 @@ class EngineerOut(BaseModel):
 
 class RequestOut(BaseModel):
     id: int
+    address: str
+    work_type: str
+    request_start: datetime
+    request_end: datetime
     point: GeoPoint
 
 

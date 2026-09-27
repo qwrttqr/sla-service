@@ -108,7 +108,7 @@ class RequestBuilder:
             raise ValueError(f"Unknown work type type: {raw!r}")
 
     async def build_from_csv(
-        self, source: str | io.BytesIO, encoding: str = "utf-8"
+            self, source: str | io.BytesIO, encoding: str = "utf-8"
     ) -> list[Request]:
         df = pd.read_csv(source, encoding=encoding, header=0)
 
@@ -141,6 +141,7 @@ class RequestBuilder:
             requests.append(
                 Request(
                     id=int(row.request_id),
+                    address=row.address,
                     point_coords=coords_by_address[address],
                     district=RequestBuilder.__build_district_from_str(row.district),
                     status=self.__build_status_from_str(row.status),
@@ -161,4 +162,3 @@ class RequestBuilder:
                 )
             )
         return requests
-

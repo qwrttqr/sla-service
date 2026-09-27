@@ -79,8 +79,7 @@ class PlannerService:
                 except TravelTimeUnsupportedTransportType as e:
                     unassigned.append(
                         UnassignedRequest(
-                            request_id=req.id,
-                            point=req.point_coords,
+                            request=req,
                             reason=str(e),
                         )
                     )
@@ -93,8 +92,7 @@ class PlannerService:
                 if not candidates:
                     unassigned.append(
                         UnassignedRequest(
-                            request_id=req.id,
-                            point=GeoPoint(lat=req.point_coords.lat, lon=req.point_coords.lon),
+                            request=req,
                             reason="Под данную заявку не нашлось инженера по требованиям",
                         )
                     )

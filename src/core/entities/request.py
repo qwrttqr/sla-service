@@ -30,6 +30,7 @@ WORK_TYPE_SKILL_MAP: dict[WorkType, Skill] = {
 class Request(BaseModel):
     id: int
     point_coords: GeoPoint
+    address: str
     work_type: WorkType
     request_start: datetime
     request_end: datetime

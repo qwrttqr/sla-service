@@ -52,7 +52,12 @@ async def build_plan_from_csv(
             for e in engineers
         ],
         requests=[
-            RequestOut(id=r.id, point=r.point_coords)
+            RequestOut(id=r.id,
+                       point=r.point_coords,
+                       address=r.address,
+                       work_type=r.work_type.value,
+                       request_start=r.request_start,
+                       request_end=r.request_end)
             for r in requests
         ],
         assignments=[
@@ -65,6 +70,16 @@ async def build_plan_from_csv(
             )
             for a in plan.assignments
         ],
-        unassigned_requests=[UnassignedRequest(id=u.request_id, reason=u.reason, point=u.point)
-                             for u in plan.unassigned],
+        unassigned_requests=[
+            UnassignedRequest(
+                id=u.request.id,
+                reason=u.reason,
+                point=u.request.point_coords,
+                address=u.request.address,
+                work_type=u.request.work_type.value,
+                request_start=u.request.request_start,
+                request_end=u.request.request_end,
+            )
+            for u in plan.unassigned
+        ],
     )
