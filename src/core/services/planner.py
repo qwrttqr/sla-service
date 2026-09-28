@@ -19,7 +19,7 @@ TRAFFIC_JAM_COEFFICIENTS: dict[int, float] = {
     21: 1.2, 22: 1.0, 23: 1.0,
 }
 DEFAULT_JAM_COEFFICIENT = 1.0
-VEHICLES_AFFECTED_BY_TRAFFIC = {VehicleType.CAR, VehicleType.BICYCLE}
+VEHICLES_AFFECTED_BY_TRAFFIC = {VehicleType.CAR, VehicleType}
 
 @dataclass
 class Slot:
@@ -263,9 +263,9 @@ class PlannerService:
         if vehicle_type not in VEHICLES_AFFECTED_BY_TRAFFIC:
             return 1.0
 
-        # Defensive: if a naive datetime slipped through, assume it's UTC.
+        # To UTC
         if at.tzinfo is None:
             at = at.replace(tzinfo=timezone.utc)
-
+        # To MSC
         msk_hour = at.astimezone(MSK).hour
         return TRAFFIC_JAM_COEFFICIENTS.get(msk_hour, DEFAULT_JAM_COEFFICIENT)
