@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 
 ADDRESSES_FILE = (
-    Path(__file__).resolve().parents[4] / "data" / "addresses" / "moscow_vao.csv"
+    Path(__file__).resolve().parents[4] / "test_data" / "addresses" / "moscow_vao.csv"
 )
 
 

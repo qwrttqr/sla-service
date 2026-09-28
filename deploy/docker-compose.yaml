@@ -15,6 +15,7 @@ services:
     volumes:
       - ../local_cache:/app/local_cache
       - ../data:/app/data
+      - ../test_data:/app/test_data
   osrm-car:
     image: osrm/osrm-backend
     command: osrm-routed --algorithm mld --max-table-size 1000 /data/map.osrm
