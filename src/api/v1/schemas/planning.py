@@ -35,6 +35,7 @@ class AssignmentOut(BaseModel):
     time_from: datetime
     time_to: datetime
     wait_minutes: int
+    travel_time_minutes: int
 
 
 class PlanResult(BaseModel):

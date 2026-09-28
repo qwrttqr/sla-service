@@ -1,6 +1,6 @@
 .venv
 .idea
-.env
+deploy/.env
 deploy/.env
 /data
 /local_cache

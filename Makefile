@@ -112,5 +112,5 @@ clean:
 	rm -rf osrm
 
 run_lint:
-    uv run python -m isort . && \
-    uv run python -m flake8 src/ tests/ --disable=ASYNC9,ASYNC102,ASYNC120
+	uv run python -m isort . && \
+	uv run python -m flake8 src/ tests/ --disable=ASYNC9,ASYNC102,ASYNC120

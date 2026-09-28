@@ -47,7 +47,7 @@ async def build_plan_from_csv(
                 start_point_lat=e.starting_point_coords.lat,
                 start_point_lon=e.starting_point_coords.lon,
                 shift_start=e.shift_start,
-                shift_end=e.shift_end,
+                shift_end=e.shift_end
             )
             for e in engineers
         ],
@@ -67,6 +67,7 @@ async def build_plan_from_csv(
                 time_from=a.planned_start.astimezone(timezone.utc),  # actual work start, not arrival
                 time_to=a.planned_finish.astimezone(timezone.utc),
                 wait_minutes=a.wait_minutes,
+                travel_time_minutes=a.travel_minutes
             )
             for a in plan.assignments
         ],
