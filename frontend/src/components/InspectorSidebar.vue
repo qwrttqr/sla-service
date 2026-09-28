@@ -46,9 +46,9 @@
           <span class="detail-value font-medium">{{ currentEngineerName }} ({{ currentEngineerVehicle }})</span>
         </div>
 
-        <div class="detail-row" v-if="task.wait_minutes > 0">
-          <span class="detail-label">Ожидание начала:</span>
-          <span class="detail-value">{{ task.wait_minutes }} мин</span>
+        <div class="detail-row" v-if="task.travel_time_minutes > 0">
+          <span class="detail-label">Время в пути:</span>
+          <span class="detail-value font-medium">{{ task.travel_time_minutes }} мин</span>
         </div>
       </div>
     </div>

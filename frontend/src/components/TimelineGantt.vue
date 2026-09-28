@@ -144,8 +144,11 @@
 
           <!-- Sequential Assignment Steps -->
           <template v-for="task in getSortedAssignments(eng.id ?? idx)" :key="task.request_id">
-            <!-- Sequential Step Connector (no fake travel time) -->
+            <!-- Sequential Step Connector with true travel time from API -->
             <div class="flow-arrow">
+              <span v-if="task.travel_time_minutes > 0" class="flow-travel-badge" title="Время в пути">
+                🚗 {{ task.travel_time_minutes }} мин
+              </span>
               <div class="arrow-line"></div>
             </div>
 
@@ -767,9 +770,23 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 
 .flow-arrow {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 3px;
   flex-shrink: 0;
   padding: 0 4px;
+}
+
+.flow-travel-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #854d0e;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .arrow-line {

@@ -256,6 +256,7 @@ async function renderData() {
                 <div><b>Инженер:</b> ${engName}</div>
                 <div><b>Адрес:</b> ${req ? req.address : 'Не указан'}</div>
                 <div><b>Время работ:</b> ${formatMskTime(task.time_from || task.planned_arrival)}${task.time_to ? ' – ' + formatMskTime(task.time_to) : ''}</div>
+                ${task.travel_time_minutes ? `<div><b>В пути:</b> ${task.travel_time_minutes} мин</div>` : ''}
               </div>
               <div style="display: flex; gap: 6px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
                 ${prevTask 

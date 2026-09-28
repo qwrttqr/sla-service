@@ -272,7 +272,7 @@ async function handleFilesSubmit({ engineersFile, requestsFile }) {
     toast.add({
       severity: 'info',
       summary: 'Расчет...',
-      detail: 'Сервис рассчитывает оптимальные маршруты с учетом пробок OSRM.',
+      detail: 'Сервис рассчитывает оптимальные маршруты с учетом дорожной ситуации.',
       life: 4000,
     })
 
@@ -363,6 +363,7 @@ function applyPlanResult(result) {
         time_from: a.time_from,
         time_to: a.time_to,
         wait_minutes: a.wait_minutes ?? 0,
+        travel_time_minutes: a.travel_time_minutes ?? 0,
       })
     })
   })

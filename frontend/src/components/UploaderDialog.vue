@@ -89,7 +89,7 @@
               @click="handleSubmit"
             >
               <IconSend :size="17" />
-              <span>{{ loading ? 'Расчет через OSRM...' : 'Рассчитать маршруты' }}</span>
+              <span>{{ loading ? 'Расчет маршрутов...' : 'Рассчитать маршруты' }}</span>
             </button>
           </div>
         </div>
