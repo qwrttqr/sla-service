@@ -199,7 +199,7 @@ function formatTime(val) {
 }
 
 .text-accent {
-  color: #d97706; /* Warm amber/yellow */
+  color: #854d0e; /* Yellow-amber */
 }
 
 .timing-divider {
@@ -286,7 +286,7 @@ function formatTime(val) {
 }
 
 .btn-yellow:hover {
-  background: #d97706;
+  background: var(--accent-hover);
   color: #ffffff;
 }
 

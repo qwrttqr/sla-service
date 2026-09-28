@@ -222,7 +222,7 @@ defineEmits(['open-uploader', 'open-emergency'])
 }
 
 .btn-yellow:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--accent-hover);
   color: #ffffff;
 }
 

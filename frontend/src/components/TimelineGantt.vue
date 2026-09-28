@@ -1,5 +1,19 @@
 <template>
-  <div class="timeline-container">
+  <div 
+    class="timeline-container"
+    :class="{ resizing: isResizing }"
+    :style="{ height: timelineHeight + 'px' }"
+  >
+    <!-- Vertical Resizer Handle -->
+    <div 
+      class="timeline-resizer" 
+      @mousedown="startResize" 
+      @dblclick="resetHeight"
+      title="Потяните для изменения высоты таймлайна (двойной клик — сброс)"
+    >
+      <div class="resizer-bar"></div>
+    </div>
+
     <div class="timeline-header">
       <div class="header-left">
         <IconTimeline :size="20" class="text-accent" />
@@ -45,7 +59,12 @@
       <div class="time-scale">
         <div class="eng-col-spacer">Инженер</div>
         <div class="ticks-container">
-          <div v-for="hour in hours" :key="hour" class="tick">
+          <div 
+            v-for="hour in hours" 
+            :key="hour" 
+            class="tick-item"
+            :style="{ left: ((hour - START_HOUR) / (END_HOUR - START_HOUR)) * 100 + '%' }"
+          >
             {{ formatHour(hour) }}
           </div>
         </div>
@@ -53,36 +72,48 @@
 
       <!-- Engineer tracks with smooth scrolling -->
       <div class="tracks-container">
-        <div
-          v-for="(eng, idx) in engineers"
-          :key="eng.id ?? idx"
-          class="track-row"
-          :class="{ active: selectedEngineerId === (eng.id ?? idx) }"
-        >
-          <div class="eng-label" :title="eng.name || getEngineerName(eng.id ?? idx)">
-            <span class="eng-dot" :style="{ backgroundColor: getEngineerColor(eng.id ?? idx) }"></span>
-            <span class="eng-name-text">{{ eng.name || getEngineerName(eng.id ?? idx) }}</span>
+        <div class="tracks-scroll-inner">
+          <!-- Global continuous vertical hour grid under all visits -->
+          <div class="tracks-grid-overlay">
+            <div
+              v-for="hour in hours"
+              :key="hour"
+              class="global-hour-line"
+              :style="{ left: ((hour - START_HOUR) / (END_HOUR - START_HOUR)) * 100 + '%' }"
+            ></div>
           </div>
 
-          <div class="track-timeline">
-            <!-- Shift duration background -->
-            <div
-              class="shift-backdrop"
-              :style="getShiftStyle(eng)"
-            ></div>
+          <div
+            v-for="(eng, idx) in engineers"
+            :key="eng.id ?? idx"
+            class="track-row"
+            :class="{ active: selectedEngineerId === (eng.id ?? idx) }"
+          >
+            <div class="eng-label" :title="eng.name || getEngineerName(eng.id ?? idx)">
+              <span class="eng-dot" :style="{ backgroundColor: getEngineerColor(eng.id ?? idx) }"></span>
+              <span class="eng-name-text">{{ eng.name || getEngineerName(eng.id ?? idx) }}</span>
+            </div>
 
-            <!-- Unified Visit Blocks (Zero collisions, no overlapping travel boxes) -->
-            <template v-for="block in getEngineerBlocks(eng.id ?? idx)" :key="block.id">
+            <div class="track-timeline">
+              <!-- Shift duration background -->
               <div
-                class="timeline-block block-work"
-                :style="getBlockStyle(block.workStartMinutes, block.workDurationMinutes)"
-                :title="`Заказ #${block.requestId} | Время работ: ${block.timeFormatted}`"
-                @click="onBlockClick(block)"
-              >
-                <span class="block-order">{{ block.assignment.order }}</span>
-                <span class="block-label">#{{ block.requestId }}</span>
-              </div>
-            </template>
+                class="shift-backdrop"
+                :style="getShiftStyle(eng)"
+              ></div>
+
+              <!-- Unified Visit Blocks (Zero collisions, sits on top of grid lines) -->
+              <template v-for="block in getEngineerBlocks(eng.id ?? idx)" :key="block.id">
+                <div
+                  class="timeline-block block-work"
+                  :style="getBlockStyle(block.workStartMinutes, block.workDurationMinutes)"
+                  :title="`Заказ #${block.requestId} | Время работ: ${block.timeFormatted}`"
+                  @click="onBlockClick(block)"
+                >
+                  <span class="block-order">{{ block.assignment.order }}</span>
+                  <span class="block-label">#{{ block.requestId }}</span>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
       </div>
@@ -159,9 +190,39 @@ const emit = defineEmits(['focus-request', 'select-task'])
 
 const viewMode = ref('gantt') // 'gantt' | 'flow'
 
-const START_HOUR = 8
-const END_HOUR = 19
+const START_HOUR = 10
+const END_HOUR = 22
 const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60
+
+const timelineHeight = ref(340)
+const isResizing = ref(false)
+
+function startResize(e) {
+  e.preventDefault()
+  isResizing.value = true
+  const startY = e.clientY
+  const startHeight = timelineHeight.value
+
+  const onMouseMove = (moveEvent) => {
+    const deltaY = startY - moveEvent.clientY
+    const minH = 180
+    const maxH = Math.min(window.innerHeight - 140, 750)
+    timelineHeight.value = Math.max(minH, Math.min(maxH, startHeight + deltaY))
+  }
+
+  const onMouseUp = () => {
+    isResizing.value = false
+    window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('mouseup', onMouseUp)
+  }
+
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function resetHeight() {
+  timelineHeight.value = 340
+}
 
 const hours = computed(() => {
   const arr = []
@@ -225,15 +286,21 @@ function onTaskClick(task) {
 }
 
 function getShiftStyle(eng) {
-  const startMin = eng.shift_start ? getMskMinutesFromMidnight(eng.shift_start) : 8 * 60
-  const endMin = eng.shift_end ? getMskMinutesFromMidnight(eng.shift_end) : 18 * 60
+  const startMin = eng.shift_start ? getMskMinutesFromMidnight(eng.shift_start) : 10 * 60
+  const endMin = eng.shift_end ? getMskMinutesFromMidnight(eng.shift_end) : 19 * 60
 
   const dayStartMinutes = START_HOUR * 60
-  const offset = startMin - dayStartMinutes
-  const duration = Math.max(60, endMin - startMin)
+  const dayEndMinutes = END_HOUR * 60
 
-  const leftPercent = Math.max(0, (offset / TOTAL_MINUTES) * 100)
-  const widthPercent = Math.min(100 - leftPercent, (duration / TOTAL_MINUTES) * 100)
+  const visibleStart = Math.max(dayStartMinutes, startMin)
+  const visibleEnd = Math.min(dayEndMinutes, endMin)
+
+  if (visibleEnd <= visibleStart) {
+    return { display: 'none' }
+  }
+
+  const leftPercent = ((visibleStart - dayStartMinutes) / TOTAL_MINUTES) * 100
+  const widthPercent = ((visibleEnd - visibleStart) / TOTAL_MINUTES) * 100
 
   return {
     left: `${leftPercent}%`,
@@ -260,8 +327,7 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  padding: 10px 16px;
-  height: 340px;
+  padding: 12px 16px 10px 16px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -269,6 +335,39 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   position: relative;
+  min-height: 180px;
+}
+
+.timeline-container.resizing {
+  user-select: none;
+}
+
+.timeline-resizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.resizer-bar {
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: #cbd5e1;
+  transition: all 0.15s ease;
+}
+
+.timeline-resizer:hover .resizer-bar,
+.timeline-container.resizing .resizer-bar {
+  background: var(--accent);
+  width: 58px;
+  height: 5px;
 }
 
 .timeline-header {
@@ -362,14 +461,14 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 5px;
+  padding: 0 8px 6px 8px;
   margin-bottom: 6px;
-  min-width: 700px;
+  min-width: 800px;
   flex-shrink: 0;
 }
 
 .eng-col-spacer {
-  width: 130px;
+  width: 124px;
   flex-shrink: 0;
   font-size: 0.72rem;
   font-weight: 700;
@@ -378,23 +477,60 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 
 .ticks-container {
   flex: 1;
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 18px;
 }
 
-.tick {
-  font-size: 0.7rem;
+.tick-item {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tick-item:first-child {
+  transform: translateX(0);
+}
+
+.tick-item:last-child {
+  transform: translateX(-100%);
 }
 
 .tracks-container {
+  min-width: 800px;
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.tracks-scroll-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 700px;
-  flex: 1;
-  overflow-y: auto;
+  min-height: 100%;
+}
+
+.tracks-grid-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 132px;
+  right: 8px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.global-hour-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.45);
+  transform: translateX(-50%);
 }
 
 .track-row {
@@ -408,6 +544,7 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   position: relative;
   transition: all 0.15s ease;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .track-row.active {
@@ -424,6 +561,8 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-main);
+  background: inherit;
+  z-index: 3;
 }
 
 .eng-name-text {
@@ -456,6 +595,7 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   border-left: 2px solid #a1a1aa;
   border-right: 2px solid #a1a1aa;
   opacity: 0.95;
+  z-index: 1;
 }
 
 .timeline-block {
@@ -471,14 +611,14 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   font-weight: 700;
   color: #18181b;
   background: var(--accent);
-  border: 1px solid #d97706;
+  border: 1px solid var(--accent-hover);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.15s ease;
-  z-index: 2;
+  z-index: 3;
 }
 
 .timeline-block:hover {
@@ -538,16 +678,26 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 }
 
 .flow-eng-badge {
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 10px;
+  padding: 6px 10px;
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.8rem;
-  white-space: nowrap;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.flow-eng-badge b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .flow-steps-chain {
@@ -564,12 +714,17 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
   gap: 8px;
   background: #ffffff;
   border: 1px solid var(--border-color);
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
+}
+
+.base-step {
+  width: 110px;
+  min-width: 110px;
 }
 
 .flow-step:hover {
@@ -579,6 +734,7 @@ function getBlockStyle(startMinutes, durationMinutes, customColor = null) {
 
 .task-step {
   border-left-width: 4px;
+  min-width: 135px;
 }
 
 .step-num {

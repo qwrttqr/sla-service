@@ -281,7 +281,7 @@ function assignToEngineer(requestId) {
 }
 
 .btn-assign-action:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--accent-hover);
   color: #ffffff;
 }
 

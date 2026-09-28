@@ -19,22 +19,6 @@
 
           <!-- Modal Body -->
           <div class="modal-body">
-            <!-- Sample CSV Quick Action Toolbar -->
-            <div class="samples-toolbar">
-              <span class="samples-label">Образцы:</span>
-              <a href="/engineers.csv" download="engineers.csv" class="sample-link" title="Скачать шаблон engineers.csv">
-                <IconDownload :size="13" />
-                <span>engineers.csv</span>
-              </a>
-              <a href="/requests.csv" download="requests.csv" class="sample-link" title="Скачать шаблон requests.csv">
-                <IconDownload :size="13" />
-                <span>requests.csv</span>
-              </a>
-              <button type="button" class="btn-load-sample" @click="loadSampleFiles">
-                <IconSparkles :size="13" />
-                <span>Подставить оба файла</span>
-              </button>
-            </div>
 
             <!-- Engineers File Drop Zone -->
             <div class="drop-zone" :class="{ 'drop-active': engineersFile }">
@@ -125,8 +109,6 @@ import {
   IconCheck,
   IconAlertCircle,
   IconSend,
-  IconDownload,
-  IconSparkles,
 } from '@tabler/icons-vue'
 
 const props = defineProps({
@@ -146,31 +128,6 @@ const requestsFile = ref(null)
 const engineersCount = ref(0)
 const requestsCount = ref(0)
 const errorMessage = ref('')
-
-async function loadSampleFiles() {
-  try {
-    const [engRes, reqRes] = await Promise.all([
-      fetch('/engineers.csv'),
-      fetch('/requests.csv'),
-    ])
-    const engText = await engRes.text()
-    const reqText = await reqRes.text()
-
-    const engBlob = new Blob([engText], { type: 'text/csv' })
-    engineersFile.value = new File([engBlob], 'engineers.csv', { type: 'text/csv' })
-    const engParsed = Papa.parse(engText, { header: true, skipEmptyLines: true })
-    engineersCount.value = engParsed.data.length
-
-    const reqBlob = new Blob([reqText], { type: 'text/csv' })
-    requestsFile.value = new File([reqBlob], 'requests.csv', { type: 'text/csv' })
-    const reqParsed = Papa.parse(reqText, { header: true, skipEmptyLines: true })
-    requestsCount.value = reqParsed.data.length
-
-    errorMessage.value = ''
-  } catch (e) {
-    errorMessage.value = 'Не удалось загрузить образцы файлов'
-  }
-}
 
 function onEngineersSelected(e) {
   const file = e.target.files[0]
@@ -309,63 +266,6 @@ function handleSubmit() {
   background: #ffffff;
 }
 
-.samples-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: #fafafa;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.72rem;
-  flex-wrap: wrap;
-}
-
-.samples-label {
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.sample-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-.sample-link:hover {
-  background: #fefce8;
-  border-color: var(--accent);
-  color: #854d0e;
-}
-
-.btn-load-sample {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: var(--accent);
-  color: #18181b;
-  border: none;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-load-sample:hover {
-  background: #d97706;
-  color: #ffffff;
-}
 
 .drop-zone {
   border: 2px dashed #cbd5e1;
@@ -497,7 +397,7 @@ function handleSubmit() {
   box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--accent-hover);
   color: #ffffff;
 }
 .btn-primary:disabled {

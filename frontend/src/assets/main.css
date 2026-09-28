@@ -9,7 +9,7 @@
   /* Borders & Dividers */
   --border-color: #e4e4e7;
   --border-hover: #d4d4d8;
-  --border-focus: #f59e0b; /* Yellow focus */
+  --border-focus: #eab308; /* Yellow focus */
 
   /* Monochrome Typography */
   --text-main: #18181b;
@@ -17,11 +17,11 @@
   --text-muted: #71717a;
   --text-subtle: #a1a1aa;
 
-  /* Primary Accent: Dispatch Yellow / Amber */
-  --accent: #f59e0b;
-  --accent-hover: #d97706;
+  /* Primary Accent: Dispatch Yellow */
+  --accent: #eab308;
+  --accent-hover: #ca8a04;
   --accent-light: #fefce8;
-  --accent-border: #fde68a;
+  --accent-border: #fde047;
   --accent-contrast: #18181b;
 
   /* Logical Semantic Colors (Used strictly when logically required) */
@@ -188,7 +188,7 @@ body {
 }
 
 .p-toast-message-info {
-  border-left: 4px solid #f59e0b !important;
+  border-left: 4px solid var(--accent) !important;
 }
 
 .p-toast-summary {

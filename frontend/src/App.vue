@@ -111,10 +111,9 @@
       @submit-files="handleFilesSubmit"
     />
 
-    <!-- Emergency Injection Dialog (Redesigned with UI/UX Pro Max) -->
+    <!-- Emergency Injection Dialog -->
     <EmergencyModal
       v-model="showEmergencyModal"
-      @inject-emergency="handleInjectEmergency"
     />
 
     <Toast position="top-right" />
@@ -263,42 +262,6 @@ function handleCancelUnassigned(requestId) {
   })
 }
 
-function handleInjectEmergency(emergencyData) {
-  const newId = 900 + Math.floor(Math.random() * 90)
-
-  const newReq = {
-    request_id: newId,
-    address: emergencyData.address,
-    status: 'sent',
-    work_type: emergencyData.work_type,
-    window_start: `2026-09-26T${emergencyData.window_start}:00+03:00`,
-    window_end: `2026-09-26T${emergencyData.window_end}:00+03:00`,
-    point_coords: getCoordinatesForAddress(emergencyData.address),
-  }
-  requests.value.push(newReq)
-
-  const targetEng = engineers.value.find((e) => e.vehicle === 'car') || engineers.value[0]
-  const targetId = targetEng ? targetEng.id : 0
-
-  const newAssignment = {
-    request_id: newId,
-    engineer_id: targetId,
-    order: 1,
-    planned_arrival: `${emergencyData.window_start}:00`,
-  }
-
-  assignments.value.push(newAssignment)
-  reindexEngineer(targetId)
-
-  handleSelectTask({ task: newAssignment, requestDetails: newReq })
-
-  toast.add({
-    severity: 'warn',
-    summary: '🚨 Экстренное перепланирование',
-    detail: `Срочная заявка #${newId} успешно встроена в маршрут инженера #${targetId}!`,
-    life: 5000,
-  })
-}
 
 
 async function handleFilesSubmit({ engineersFile, requestsFile }) {
