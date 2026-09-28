@@ -4,11 +4,10 @@ from common.types import GeoPoint
 from core.clients.geocode.base_client import BaseGeoCodeClient
 from core.clients.geocode.exceptions import GeocodeNotFound
 from core.clients.geocode.schemas import GeocoderRequest
-from utils.local_cache import get_from_cache, save_to_cache
 
 
 class GeocoderService:
-    def __init__(self, client: BaseGeoCodeClient, rate_limit_delay: float = 0.3):
+    def __init__(self, client: BaseGeoCodeClient, rate_limit_delay: float = 0.2):
         self.client = client
         self._semaphore = asyncio.Semaphore(1)
         self._rate_limit_delay = rate_limit_delay

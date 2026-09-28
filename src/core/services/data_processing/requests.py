@@ -1,7 +1,7 @@
 import ast
 import asyncio
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -107,6 +107,10 @@ class RequestBuilder:
         except KeyError:
             raise ValueError(f"Unknown work type type: {raw!r}")
 
+    @staticmethod
+    def _parse_datetime_utc(raw: str, fmt: str) -> datetime:
+        return datetime.strptime(raw, fmt).astimezone(timezone.utc)
+
     async def build_from_csv(
             self, source: str | io.BytesIO, encoding: str = "utf-8"
     ) -> list[Request]:
@@ -146,10 +150,12 @@ class RequestBuilder:
                     district=RequestBuilder.__build_district_from_str(row.district),
                     status=self.__build_status_from_str(row.status),
                     work_type=self.__build_work_type_from_str(row.work_type),
-                    request_start=datetime.strptime(
+                    request_start=RequestBuilder._parse_datetime_utc(
                         row.window_start, self.DATETIME_FMT
                     ),
-                    request_end=datetime.strptime(row.window_end, self.DATETIME_FMT),
+                    request_end=RequestBuilder._parse_datetime_utc(
+                        row.window_end, self.DATETIME_FMT
+                    ),
                     required_skills=RequestBuilder.__build_skill_set_from_str(
                         row.required_skills
                     ),

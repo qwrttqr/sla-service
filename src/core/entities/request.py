@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -6,10 +6,10 @@ from common.types import (Equipment, GeoPoint, Skill, Status, VehicleType,
                           WorkType, District)
 
 WORK_TYPE_DURATION_MAP: dict[WorkType, int] = {
-    WorkType.CONNECT_CLIENT: 90,
-    WorkType.EMERGENCY_WORK: 100,
-    WorkType.POST_ORDER: 40,
-    WorkType.LOCAL_WORK_OR_REPAIR: 50,
+    WorkType.CONNECT_CLIENT: 70,
+    WorkType.EMERGENCY_WORK: 80,
+    WorkType.POST_ORDER: 20,
+    WorkType.LOCAL_WORK_OR_REPAIR: 30,
 }
 
 WORK_TYPE_PRIORITY_MAP: dict[WorkType, int] = {
@@ -49,3 +49,8 @@ class Request(BaseModel):
     @property
     def priority(self) -> int:
         return WORK_TYPE_PRIORITY_MAP[self.work_type]
+
+    @computed_field
+    @property
+    def arrive_before_to_accomplish(self) -> datetime:
+        return self.request_end - timedelta(minutes=self.duration_minutes)
