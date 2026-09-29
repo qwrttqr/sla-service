@@ -42,37 +42,19 @@ linux_osrm_all: linux_clip linux_osrm_car linux_osrm_bicycle linux_osrm_foot
 
 linux_osrm_profile:
 	mkdir -p osrm/$(PROFILE)
-
 	if test -f osrm/$(PROFILE)/.built; then \
 		echo "OSRM $(PROFILE) is already built. Skipping."; \
-		exit 0; \
+	else \
+		cp osrm_arts/moscow-oblast.osm.pbf osrm/$(PROFILE)/map.osm.pbf && \
+		docker run --rm -v "$(CURDIR)/osrm/$(PROFILE):/data" osrm/osrm-backend \
+			osrm-extract -p /opt/$(PROFILE).lua /data/map.osm.pbf && \
+		docker run --rm -v "$(CURDIR)/osrm/$(PROFILE):/data" osrm/osrm-backend \
+			osrm-partition /data/map.osrm && \
+		docker run --rm -v "$(CURDIR)/osrm/$(PROFILE):/data" osrm/osrm-backend \
+			osrm-customize /data/map.osrm && \
+		rm -f osrm/$(PROFILE)/map.osm.pbf && \
+		touch osrm/$(PROFILE)/.built; \
 	fi
-
-	cp osrm_arts/moscow-oblast.osm.pbf \
-		osrm/$(PROFILE)/map.osm.pbf
-
-	docker run --rm \
-		-v "$(CURDIR)/osrm/$(PROFILE):/data" \
-		osrm/osrm-backend \
-		osrm-extract \
-		-p /opt/$(PROFILE).lua \
-		/data/map.osm.pbf
-
-	docker run --rm \
-		-v "$(CURDIR)/osrm/$(PROFILE):/data" \
-		osrm/osrm-backend \
-		osrm-partition \
-		/data/map.osrm
-
-	docker run --rm \
-		-v "$(CURDIR)/osrm/$(PROFILE):/data" \
-		osrm/osrm-backend \
-		osrm-customize \
-		/data/map.osrm
-
-	rm -f osrm/$(PROFILE)/map.osm.pbf
-
-	touch osrm/$(PROFILE)/.built
 
 linux_up:
 	cd deploy && docker compose up -d --build

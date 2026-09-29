@@ -1,5 +1,6 @@
 import asyncio
 import math
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from math import atan2, cos, radians, sin, sqrt
@@ -11,7 +12,7 @@ from core.clients.travel_time.exceptions import TravelTimeUnavailable, TravelTim
 from core.entities import (Assignment, Engineer, Office, Plan, Request,
                            UnassignedRequest)
 from core.services.travel_time import TravelTimeService
-
+logger = logging.getLogger(__name__)
 TRAFFIC_JAM_COEFFICIENTS: dict[int, float] = {
     7: 1.3, 8: 1.6, 9: 1.7, 10: 1.3,
     11: 1.1, 12: 1.1, 13: 1.1, 14: 1.1, 15: 1.2,
@@ -19,7 +20,7 @@ TRAFFIC_JAM_COEFFICIENTS: dict[int, float] = {
     21: 1.2, 22: 1.0, 23: 1.0,
 }
 DEFAULT_JAM_COEFFICIENT = 1.0
-VEHICLES_AFFECTED_BY_TRAFFIC = {VehicleType.CAR, VehicleType}
+VEHICLES_AFFECTED_BY_TRAFFIC = {VehicleType.CAR}
 
 @dataclass
 class Slot:
@@ -50,6 +51,7 @@ class PlannerService:
     def __init__(self, travel_time_service: TravelTimeService):
         self._travel_time_service = travel_time_service
         self._raw_travel_cache: dict[tuple, float | None] = {}
+        self._sem = asyncio.Semaphore(10)
 
     async def build(
             self, engineers: list[Engineer], offices: list[Office], requests: list[Request]
@@ -220,10 +222,14 @@ class PlannerService:
         key = (a.lat, a.lon, b.lat, b.lon, vehicle)
         if key not in self._raw_travel_cache:
             try:
-                m = await self._travel_time_service.get_matrix([a], [b], vehicle)
+                async with self._sem:
+                    m = await self._travel_time_service.get_matrix([a], [b], vehicle)
                 self._raw_travel_cache[key] = m[0][0]
-            except (httpx.HTTPError, TravelTimeUnavailable, TravelTimeUnsupportedTransportType):
-                self._raw_travel_cache[key] = None
+            except TravelTimeUnsupportedTransportType:
+                self._raw_travel_cache[key] = None   # permanent, safe to cache
+            except (httpx.HTTPError, TravelTimeUnavailable) as e:
+                logger.warning("travel time failed %s -> %s: %r", a, b, e)
+                return None                           # transient: don't cache
         raw = self._raw_travel_cache[key]
         if raw is None:
             return None
