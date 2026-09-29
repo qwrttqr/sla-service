@@ -1,12 +1,70 @@
 # How to start
 
+
+## Быстрый старт (Windows / macOS / Linux)
+
+По сути весь запуск сводится к трём шагам:
+
+1. **Установить Docker** (Docker Desktop на Windows/macOS, docker + docker compose на Linux).
+2. **Установить GNU Make.**
+3. **Создать .env файл c API и переместить его в deploy** (ниже описано как это сделать)
+4. **Запустить нужную цель** (`make win_all` на Windows, `make linux_all` на macOS/Linux).
+5. **Перейти на http://localhost:3000** (можно прямо из Docker)
+
+### Windows
+
+
+1. Установите [Docker Desktop](https://www.docker.com/products/docker-desktop/) и убедитесь, что он запущен.
+
+2. Установите GNU Make, например одним из способов:
+   - `choco install make` (через [Chocolatey](https://chocolatey.org/)),
+   - либо через Git Bash / MSYS2 (`pacman -S make`),
+
+- либо через `winget install GnuWin32.Make`. (recommended)
+3. В корне проекта выполните:
+
+
+```shell
+   make win_all
+*не забудьте создать .env с api - ключом
+## Linux
+
+### 1. Установка Docker
+
+Установите Docker Engine и плагин Compose.
+
+**Ubuntu / Debian:**
+
+```bas
+sudo apt update
+sudo apt install -y docker.io docker-compose-plugin
+```
+2. Установка GNU Make
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt install -y make
+```
+4. Запуск проекта
+
+В корне проекта выполните:
+
+```bash
+make linux_all
+```
+
+*не забудьте создать .env с api - ключом
 ## Переменные окружения
+
 
 Сервис использует Yandex Geocoder API для превращения адресов в значения долготы и широты.
 Для использования API необходимо [создать ключ](https://yandex.ru/maps-api/docs/geocoder-api/quickstart.html)
 (доступен бесплатный тариф, которого достаточно для тестирования).
 
-Получите ключ и создайте `deploy/.env` файл в папке `deploy`, в него добавьте переменную `YANDEX_GEOCODER_API_KEY`.
+Получите ключ и создайте `deploy/.env` файл в папке `deploy`, в него добавьте переменную `YANDEX_GEOCODER_API_KEY`. (YANDEX_GEOCODER_API_KEY=ваш_ключ_здесь)
+
+
 
 ## Зависимости и виртуальное окружение
 
@@ -14,6 +72,7 @@
 сделать всё вручную то:
 
 1. Установите `uv` ([инструкция по установке](https://docs.astral.sh/uv/getting-started/installation/)).
+
 2. Установите зависимости и создайте виртуальное окружение:
 
 ```shell
@@ -40,13 +99,14 @@
 2. Положить в нее таблицу `moscow_vao.csv`
 
 Формат таблицы:
-
-| adresses                                                      | 
-|---------------------------------------------------------------| 
-| город Москва,Косинская улица,дом 26А                          |
+| adresses  | 
+| ------------- | 
+| город Москва,Косинская улица,дом 26А |
 | город Москва,3-я Владимирская улица,дом 9,корпус 3,строение 3 |
+| ... | 
 
 [Яндекс диск с moscow_vao.csv](https://disk.360.yandex.ru/i/AzAhUVJQSPe6qw)
+
 
 ## OSRM и запуск через Makefile
 
