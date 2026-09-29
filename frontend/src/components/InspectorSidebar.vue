@@ -24,7 +24,7 @@
         </div>
         <div class="timing-divider"></div>
         <div class="timing-col">
-          <span class="timing-label">Окно SLA</span>
+          <span class="timing-label">Временное окно</span>
           <span class="timing-val">{{ formatTime(requestDetails?.window_start) }} – {{ formatTime(requestDetails?.window_end) }}</span>
         </div>
       </div>
